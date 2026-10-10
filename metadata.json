@@ -1,0 +1,6 @@
+{
+  "name": "Potabi Sinh Học - Học Viện Khám Phá 2D",
+  "description": "Trò chơi phiêu lưu khám phá Sinh học 2D tương tác dành cho học sinh trung học cùng người bạn đồng hành Potabi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
