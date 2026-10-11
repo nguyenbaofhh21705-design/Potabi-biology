@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { IMAGES, NOTEBOOK_ENTRIES, STAGES } from '../data/biologyData';
+import { calculateExplorerLevel } from '../data/gameProgress';
 
 interface JourneyMapScreenProps {
   onPlayCutscene: () => void;
@@ -8,12 +9,95 @@ interface JourneyMapScreenProps {
   onNavigateQuests: () => void;
   diamonds: number;
   exp: number;
+  unlockedStageIds: string[];
+  completedStageIds: string[];
+  stageProgress: Record<string, number>;
+  unlockedSpecimens: string[];
+  onCompleteStageQuiz: (stageId: string, expReward: number, diamondReward: number) => void;
 }
+
+const CIRCULATORY_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 16): Ở người, ngăn tim nào có thành cơ dày nhất để bơm máu giàu O2 vào động mạch chủ đi nuôi toàn bộ cơ thể?',
+    options: [
+      'A. Tâm nhĩ phải',
+      'B. Tâm thất phải',
+      'C. Tâm thất trái',
+    ],
+    correct: 2,
+    hint: 'Gợi ý: Ngăn tim này là điểm xuất phát của Vòng tuần hoàn lớn đi khắp cơ thể.',
+    explanation: 'Chính xác! Tâm thất trái có thành cơ dày nhất vì phải tạo lực đẩy lớn nhất đưa máu vào Vòng tuần hoàn lớn.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 17): Mỗi chu kỳ co dãn của tim người trưởng thành kéo dài khoảng 0,8 giây gồm 3 pha theo thứ tự nào?',
+    options: [
+      'A. Pha nhĩ co (0,1s) → Pha thất co (0,3s) → Pha dãn chung (0,4s)',
+      'B. Pha thất co (0,4s) → Pha nhĩ co (0,2s) → Pha dãn chung (0,2s)',
+      'C. Pha dãn chung (0,6s) → Pha nhĩ co (0,1s) → Pha thất co (0,1s)',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Nhờ thời gian nghỉ (pha dãn chung) chiếm tới một nửa chu kỳ (0,4s) mà cơ tim có thể làm việc suốt đời không mỏi.',
+    explanation: 'Tuyệt vời! Chu kỳ tim 0,8s gồm: Pha nhĩ co 0,1s, Pha thất co 0,3s và Pha dãn chung 0,4s.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 16): Loại mạch máu nào có thành chỉ gồm một lớp biểu bì mỏng và lòng mạch hẹp nhất giúp thực hiện trao đổi chất với tế bào?',
+    options: [
+      'A. Động mạch chủ',
+      'B. Tĩnh mạch chủ',
+      'C. Mao mạch',
+    ],
+    correct: 2,
+    hint: 'Gợi ý: Mạch máu nối giữa tiểu động mạch và tiểu tĩnh mạch, nơi hồng cầu phải đi thành hàng một.',
+    explanation: 'Xuất sắc! Mao mạch có thành chỉ gồm 1 lớp tế bào biểu bì và vận tốc máu chậm nhất giúp trao đổi O2, CO2 và chất dinh dưỡng hiệu quả.',
+  },
+];
+
+const RESPIRATORY_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 21): Sự trao đổi khí giữa phế nang ở phổi và máu trong mao mạch diễn ra theo cơ chế vật lý nào?',
+    options: [
+      'A. Khuếch tán khí từ nơi có nồng độ (phân áp) cao tới nơi có nồng độ thấp',
+      'B. Vận chuyển chủ động tiêu tốn toàn bộ năng lượng của phế nang',
+      'C. Thẩm thấu của phân tử nước qua màng tế bào',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Nồng độ O2 trong không khí phế nang cao hơn trong máu mao mạch phổi.',
+    explanation: 'Chính xác! O2 khuếch tán từ phế nang vào máu và CO2 khuếch tán từ máu ra phế nang nhờ chênh lệch phân áp.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 20): Cấu tạo nào của phổi làm tăng diện tích bề mặt trao đổi khí lên tới 70 – 80 m²?',
+    options: [
+      'A. Nhờ các vòng sụn khí quản xếp chồng lên nhau',
+      'B. Nhờ có tới 700 – 800 triệu phế nang (túi phổi nhỏ) bao quanh bởi mạng mao mạch dày đặc',
+      'C. Nhờ cơ hoành ngăn cách khoang ngực và khoang bụng',
+    ],
+    correct: 1,
+    hint: 'Gợi ý: Đơn vị cấu tạo nhỏ nhất dạng túi ở tận cùng phế quản.',
+    explanation: 'Hoàn toàn chính xác! Hàng trăm triệu phế nang giúp diện tích trao đổi khí của phổi gấp hơn 40 lần diện tích da cơ thể.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 21): Khi cử động hít vào bình thường, cơ liên sườn ngoài và cơ hoành phối hợp hoạt động như thế nào?',
+    options: [
+      'A. Cơ liên sườn ngoài co, cơ hoành co làm thể tích lồng ngực tăng lên',
+      'B. Cơ liên sườn ngoài dãn, cơ hoành dãn làm thể tích lồng ngực giảm xuống',
+      'C. Cơ hoành ngừng hoạt động hoàn toàn',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Khi cơ hoành co sẽ hạ thấp xuống phía bụng, kéo đáy phổi xuống.',
+    explanation: 'Đúng rồi! Sự co của cơ liên sườn ngoài và cơ hoành làm lồng ngực nở rộng theo cả 3 chiều, kéo không khí tràn vào phổi.',
+  },
+];
 
 export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
   onPlayCutscene,
   onPlayStage2D,
   onOpenNotebook,
+  exp,
+  unlockedStageIds,
+  completedStageIds,
+  stageProgress,
+  unlockedSpecimens,
+  onCompleteStageQuiz,
 }) => {
   const [selectedStageId, setSelectedStageId] = useState<string>('tuan-hoan');
   const [showTheoryModal, setShowTheoryModal] = useState<boolean>(false);
@@ -21,18 +105,67 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
   const [activeBottomModal, setActiveBottomModal] = useState<
     null | 'badges' | 'specimens' | 'leaderboard'
   >(null);
+  const [lockNotice, setLockNotice] = useState<string | null>(null);
 
+  // Interactive Stage Challenge Modal for Stages 2 & 3
+  const [activeQuizStageId, setActiveQuizStageId] = useState<string | null>(null);
+  const [quizStep, setQuizStep] = useState<number>(0);
+  const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
+  const [showHint, setShowHint] = useState<boolean>(false);
+
+  const explorerLevel = calculateExplorerLevel(exp).level;
   const currentStage = STAGES[selectedStageId] || STAGES['tuan-hoan'];
+  const isCurrentStageUnlocked =
+    unlockedStageIds.includes(selectedStageId) &&
+    (!currentStage.requiredLevel || explorerLevel >= currentStage.requiredLevel);
+
+  // Calculate region progress dynamically from stageProgress
+  const totalRegionProgress = Math.round(
+    Object.values(stageProgress).reduce((acc, v) => acc + v, 0) / 5
+  );
 
   const handleEnterGame = () => {
+    setLockNotice(null);
+    if (!isCurrentStageUnlocked) {
+      if (currentStage.requiredStageId && !completedStageIds.includes(currentStage.requiredStageId)) {
+        const reqStage = STAGES[currentStage.requiredStageId];
+        setLockNotice(
+          `Chặng này đang khóa! Bạn cần hoàn thành 100% "${reqStage?.name || 'Màn trước'}" trước khi vào màn này.`
+        );
+      } else if (currentStage.requiredLevel && explorerLevel < currentStage.requiredLevel) {
+        setLockNotice(
+          `Chặng này yêu cầu Nhà Thám Hiểm đạt Cấp ${currentStage.requiredLevel} (Hiện tại: Cấp ${explorerLevel}). Hãy làm Nhiệm vụ tuần hoặc khám phá các trạm để tăng EXP!`
+        );
+      }
+      return;
+    }
+
     if (selectedStageId === 'tieu-hoa') {
       onPlayCutscene();
-    } else if (selectedStageId === 'tuan-hoan') {
-      onPlayStage2D();
-    } else if (selectedStageId === 'ho-hap') {
-      onPlayCutscene();
+    } else if (selectedStageId === 'tuan-hoan' || selectedStageId === 'ho-hap') {
+      setActiveQuizStageId(selectedStageId);
+      setQuizStep(0);
+      setSelectedOpt(null);
+      setShowHint(false);
     } else {
       onPlayStage2D();
+    }
+  };
+
+  const activeQuizData =
+    activeQuizStageId === 'ho-hap' ? RESPIRATORY_QUIZ : CIRCULATORY_QUIZ;
+
+  const handleNextQuizQuestion = () => {
+    if (!activeQuizStageId) return;
+    if (selectedOpt !== activeQuizData[quizStep].correct) return;
+    if (quizStep < activeQuizData.length - 1) {
+      setQuizStep((s) => s + 1);
+      setSelectedOpt(null);
+      setShowHint(false);
+    } else {
+      const st = STAGES[activeQuizStageId];
+      onCompleteStageQuiz(activeQuizStageId, st.exp, st.diamonds);
+      setActiveQuizStageId(null);
     }
   };
 
@@ -65,12 +198,14 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             <div className="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md">
               <span className="material-symbols-outlined text-primary text-lg">flag</span>
               <span>Tiến Độ Vùng:</span>
-              <span className="font-headline-sm text-headline-sm text-primary">42%</span>
+              <span className="font-headline-sm text-headline-sm text-primary">
+                {Math.max(42, totalRegionProgress)}%
+              </span>
             </div>
             <div className="w-24 h-2.5 bg-secondary-container rounded-full overflow-hidden">
               <div
                 className="bg-primary h-full rounded-full transition-all duration-700"
-                style={{ width: '42%' }}
+                style={{ width: `${Math.max(42, totalRegionProgress)}%` }}
               ></div>
             </div>
             <button
@@ -144,15 +279,18 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
           <div className="absolute inset-0 z-10">
             {/* Stage 1: Hệ Tiêu Hóa */}
             <div
-              onClick={() => setSelectedStageId('tieu-hoa')}
+              onClick={() => {
+                setLockNotice(null);
+                setSelectedStageId('tieu-hoa');
+              }}
               className={`absolute left-[12%] bottom-[16%] flex flex-col items-center group cursor-pointer transition-transform ${
                 selectedStageId === 'tieu-hoa' ? 'scale-105' : ''
               }`}
             >
               <div className="relative flex items-center justify-center">
                 <span className="absolute -top-12 px-3 py-1 bg-surface rounded-full shadow-lg font-label-sm text-label-sm text-on-surface flex items-center gap-1 scale-95 group-hover:scale-105 transition-all whitespace-nowrap">
-                  <span className="material-symbols-outlined text-xs text-amber-500">star</span> 75%
-                  Hoàn thành
+                  <span className="material-symbols-outlined text-xs text-amber-500">star</span>{' '}
+                  {stageProgress['tieu-hoa'] || 75}% Hoàn thành
                 </span>
                 <div
                   className={`w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center shadow-lg ring-4 ${
@@ -176,9 +314,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
               </div>
               <div
                 className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
-                  selectedStageId === 'tieu-hoa'
-                    ? 'border-tertiary-fixed'
-                    : 'border-transparent'
+                  selectedStageId === 'tieu-hoa' ? 'border-tertiary-fixed' : 'border-transparent'
                 }`}
               >
                 <p className="font-label-md text-label-md text-inverse-on-surface">
@@ -192,14 +328,20 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
 
             {/* Stage 2: Hệ Tuần Hoàn */}
             <div
-              onClick={() => setSelectedStageId('tuan-hoan')}
+              onClick={() => {
+                setLockNotice(null);
+                setSelectedStageId('tuan-hoan');
+              }}
               className={`absolute left-[38%] top-[34%] flex flex-col items-center group cursor-pointer transition-transform ${
                 selectedStageId === 'tuan-hoan' ? 'scale-105' : ''
               }`}
             >
               <div className="relative flex items-center justify-center">
                 <span className="absolute -top-10 px-3 py-1 bg-amber-400 text-on-tertiary-fixed rounded-full shadow-md font-label-sm text-label-sm font-bold animate-bounce flex items-center gap-1 whitespace-nowrap">
-                  <span className="material-symbols-outlined text-sm">lock_open</span> MỚI MỞ KHÓA
+                  <span className="material-symbols-outlined text-sm">
+                    {unlockedStageIds.includes('tuan-hoan') ? 'lock_open' : 'lock'}
+                  </span>{' '}
+                  {completedStageIds.includes('tuan-hoan') ? 'ĐÃ HOÀN THÀNH' : 'MỚI MỞ KHÓA'}
                 </span>
                 <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center shadow-xl ring-8 ring-amber-300/40 group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-on-primary text-4xl animate-pulse">
@@ -227,40 +369,50 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             </div>
 
             {/* Stage 3: Hệ Hô Hấp */}
-            <div
-              onClick={() => setSelectedStageId('ho-hap')}
-              className={`absolute left-[54%] top-[18%] flex flex-col items-center group cursor-pointer transition-transform ${
-                selectedStageId === 'ho-hap' ? 'scale-105' : ''
-              }`}
-            >
-              <div className="relative flex items-center justify-center">
-                <div
-                  className={`w-[72px] h-[72px] rounded-full bg-surface-container-high flex items-center justify-center shadow-md opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all ${
-                    selectedStageId === 'ho-hap' ? 'ring-4 ring-tertiary-fixed' : ''
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-primary text-2xl">air</span>
-                </div>
-                <div className="absolute -bottom-1 -right-2 bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">
-                  Màn 3
-                </div>
-              </div>
+            {(!filterUnlockedOnly || unlockedStageIds.includes('ho-hap')) && (
               <div
-                className={`mt-2 text-center bg-inverse-surface/80 backdrop-blur-sm px-3 py-1 rounded-xl border ${
-                  selectedStageId === 'ho-hap' ? 'border-tertiary-fixed' : 'border-transparent'
+                onClick={() => {
+                  setLockNotice(null);
+                  setSelectedStageId('ho-hap');
+                }}
+                className={`absolute left-[54%] top-[18%] flex flex-col items-center group cursor-pointer transition-transform ${
+                  selectedStageId === 'ho-hap' ? 'scale-105' : ''
                 }`}
               >
-                <p className="font-label-md text-label-md text-inverse-on-surface">Hệ Hô Hấp</p>
-                <p className="font-label-sm text-label-sm text-secondary-fixed-dim">
-                  Phế Nang &amp; Oxy
-                </p>
+                <div className="relative flex items-center justify-center">
+                  <div
+                    className={`w-[72px] h-[72px] rounded-full bg-surface-container-high flex items-center justify-center shadow-md opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all ${
+                      selectedStageId === 'ho-hap' ? 'ring-4 ring-tertiary-fixed' : ''
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-primary text-2xl">
+                      {unlockedStageIds.includes('ho-hap') ? 'air' : 'lock'}
+                    </span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-2 bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">
+                    Màn 3
+                  </div>
+                </div>
+                <div
+                  className={`mt-2 text-center bg-inverse-surface/80 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                    selectedStageId === 'ho-hap' ? 'border-tertiary-fixed' : 'border-transparent'
+                  }`}
+                >
+                  <p className="font-label-md text-label-md text-inverse-on-surface">Hệ Hô Hấp</p>
+                  <p className="font-label-sm text-label-sm text-secondary-fixed-dim">
+                    Phế Nang &amp; Oxy
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Stage 4: Hệ Thần Kinh */}
             {!filterUnlockedOnly && (
               <div
-                onClick={() => setSelectedStageId('than-kinh')}
+                onClick={() => {
+                  setLockNotice(null);
+                  setSelectedStageId('than-kinh');
+                }}
                 className="absolute left-[70%] top-[40%] flex flex-col items-center opacity-75 hover:opacity-95 cursor-pointer transition-opacity"
               >
                 <div className="relative flex items-center justify-center">
@@ -283,7 +435,10 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             {/* Stage 5: Hệ Vận Động */}
             {!filterUnlockedOnly && (
               <div
-                onClick={() => setSelectedStageId('van-dong')}
+                onClick={() => {
+                  setLockNotice(null);
+                  setSelectedStageId('van-dong');
+                }}
                 className="absolute left-[84%] bottom-[24%] flex flex-col items-center opacity-65 hover:opacity-90 cursor-pointer transition-opacity"
               >
                 <div className="relative flex items-center justify-center">
@@ -380,6 +535,13 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 </p>
               </div>
 
+              {lockNotice && (
+                <div className="bg-error-container text-on-error-container p-2.5 rounded-xl font-label-sm text-label-sm flex items-start gap-1.5">
+                  <span className="material-symbols-outlined text-base shrink-0">lock</span>
+                  <span>{lockNotice}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-space-sm">
                 <div className="bg-surface-container rounded-xl p-2.5 flex items-center gap-space-xs">
                   <div className="w-9 h-9 rounded-lg bg-amber-400/20 text-tertiary flex items-center justify-center shrink-0">
@@ -426,10 +588,20 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             <div className="pt-space-sm flex flex-col gap-2">
               <button
                 onClick={handleEnterGame}
-                className="w-full py-3.5 px-space-md rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition-all cursor-pointer"
+                className={`w-full py-3.5 px-space-md rounded-full font-label-lg text-label-lg shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition-all cursor-pointer ${
+                  isCurrentStageUnlocked
+                    ? 'bg-primary hover:bg-primary-container text-on-primary'
+                    : 'bg-surface-container-highest text-on-surface-variant'
+                }`}
               >
-                <span className="material-symbols-outlined text-xl">swords</span>
-                <span>VÀO MÀN CHƠI [KHÁM PHÁ NGAY]</span>
+                <span className="material-symbols-outlined text-xl">
+                  {isCurrentStageUnlocked ? 'swords' : 'lock'}
+                </span>
+                <span>
+                  {isCurrentStageUnlocked
+                    ? 'VÀO MÀN CHƠI [KHÁM PHÁ NGAY]'
+                    : 'CHẶNG ĐANG KHÓA (XEM ĐIỀU KIỆN)'}
+                </span>
               </button>
               <button
                 onClick={() => setShowTheoryModal(true)}
@@ -456,7 +628,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 Sổ Tay Sinh Học
               </span>
               <span className="font-label-lg text-label-lg text-on-surface truncate">
-                18/45 Đã mở khóa
+                {15 + unlockedSpecimens.length}/45 Đã mở khóa
               </span>
             </div>
           </button>
@@ -490,7 +662,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 Mẫu Vật Thu Thập
               </span>
               <span className="font-label-lg text-label-lg text-on-surface truncate">
-                Hồng cầu, Bạch cầu
+                Hồng cầu, Bạch cầu ({unlockedSpecimens.length})
               </span>
             </div>
           </button>
@@ -507,12 +679,126 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 Bảng Xếp Hạng Lớp
               </span>
               <span className="font-label-lg text-label-lg text-on-surface truncate">
-                Hạng 4 Tuần Này
+                {exp >= 2900
+                  ? 'Hạng 1 Tuần Này'
+                  : exp >= 2650
+                  ? 'Hạng 2 Tuần Này'
+                  : exp >= 2520
+                  ? 'Hạng 3 Tuần Này'
+                  : 'Hạng 4 Tuần Này'}
               </span>
             </div>
           </button>
         </div>
       </div>
+
+      {/* Stage 2 / Stage 3 Interactive Challenge Modal */}
+      {activeQuizStageId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/75 backdrop-blur-md p-space-md">
+          <div className="bg-surface-container-lowest rounded-3xl max-w-xl w-full p-space-lg shadow-2xl border-4 border-primary flex flex-col gap-space-md">
+            <div className="flex items-center justify-between border-b border-surface-container-high pb-space-sm">
+              <div>
+                <span className="font-label-sm text-label-sm text-primary uppercase font-bold">
+                  Thử Thách Khám Phá Chặng • {STAGES[activeQuizStageId].stageNumber}
+                </span>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface">
+                  {STAGES[activeQuizStageId].title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveQuizStageId(null)}
+                className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="font-label-lg text-label-lg text-primary">
+                {activeQuizData[quizStep].q}
+              </p>
+              <button
+                onClick={() => setShowHint(!showHint)}
+                className="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold cursor-pointer shrink-0"
+              >
+                Gợi ý
+              </button>
+            </div>
+
+            {showHint && (
+              <div className="bg-tertiary-fixed/40 border border-tertiary-fixed-dim p-3 rounded-2xl font-body-sm text-body-sm text-on-tertiary-fixed">
+                {activeQuizData[quizStep].hint}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-space-xs">
+              {activeQuizData[quizStep].options.map((opt, idx) => {
+                const isSelected = selectedOpt === idx;
+                const isCorrect = idx === activeQuizData[quizStep].correct;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedOpt(idx)}
+                    className={`p-3.5 rounded-2xl text-left font-body-sm text-body-sm border-2 transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? isCorrect
+                          ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold'
+                          : 'bg-error-container/50 border-error text-on-error-container'
+                        : 'bg-surface-container-low border-outline-variant/40 hover:border-primary'
+                    }`}
+                  >
+                    <span>{opt}</span>
+                    {isSelected && (
+                      <span className="material-symbols-outlined text-lg">
+                        {isCorrect ? 'check_circle' : 'error'}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedOpt !== null && (
+              <div
+                className={`p-3 rounded-2xl font-body-sm text-body-sm ${
+                  selectedOpt === activeQuizData[quizStep].correct
+                    ? 'bg-emerald-100 text-emerald-950'
+                    : 'bg-error-container text-on-error-container'
+                }`}
+              >
+                {selectedOpt === activeQuizData[quizStep].correct
+                  ? activeQuizData[quizStep].explanation
+                  : 'Chưa chính xác! Hãy xem gợi ý Sinh học 8 và thử lại nhé.'}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => {
+                  setActiveQuizStageId(null);
+                  onPlayStage2D();
+                }}
+                className="px-space-md py-2 rounded-full bg-surface-container text-primary font-label-sm text-label-sm cursor-pointer"
+              >
+                Vào Màn 2D Thực Hành
+              </button>
+              <button
+                disabled={selectedOpt !== activeQuizData[quizStep].correct}
+                onClick={handleNextQuizQuestion}
+                className={`px-space-lg py-2 rounded-full font-label-md text-label-md ${
+                  selectedOpt === activeQuizData[quizStep].correct
+                    ? 'bg-primary text-on-primary shadow-md cursor-pointer'
+                    : 'bg-surface-container-highest text-outline cursor-not-allowed'
+                }`}
+              >
+                {quizStep < activeQuizData.length - 1
+                  ? 'Câu tiếp theo ➔'
+                  : 'Hoàn thành Chặng & Mở khóa Màn kế tiếp'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Theory & Notes Modal */}
       {showTheoryModal && (
@@ -626,7 +912,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                   <div>
                     <p className="font-label-lg text-label-lg text-on-surface">Chuyên Gia Kính Soi</p>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Nhuộm mẫu Iốt chuẩn xác trên 5 tiêu bản.
+                      Nhuộm mẫu Iốt chuẩn xác trên tiêu bản biểu bì.
                     </p>
                   </div>
                 </div>
@@ -635,7 +921,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
 
             {activeBottomModal === 'specimens' && (
               <div className="flex flex-col gap-space-sm max-h-80 overflow-y-auto">
-                {NOTEBOOK_ENTRIES.slice(0, 4).map((entry) => (
+                {NOTEBOOK_ENTRIES.filter((e) => unlockedSpecimens.includes(e.id)).map((entry) => (
                   <div
                     key={entry.id}
                     className="bg-surface-container-low p-space-md rounded-2xl flex flex-col gap-1"
@@ -657,29 +943,37 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             {activeBottomModal === 'leaderboard' && (
               <div className="flex flex-col gap-space-xs">
                 {[
-                  { rank: 1, name: 'Minh Anh • Lớp 8A1', exp: '2,850 EXP' },
-                  { rank: 2, name: 'Hoàng Nam • Lớp 8A3', exp: '2,640 EXP' },
-                  { rank: 3, name: 'Thảo Nguyên • Lớp 7B2', exp: '2,510 EXP' },
-                  { rank: 4, name: 'Bạn (Nhà Thám Hiểm Cấp 12)', exp: '2,370 EXP', highlight: true },
-                  { rank: 5, name: 'Đức Phúc • Lớp 8A1', exp: '2,190 EXP' },
-                ].map((item) => (
-                  <div
-                    key={item.rank}
-                    className={`flex items-center justify-between p-3 rounded-2xl ${
-                      item.highlight
-                        ? 'bg-primary-fixed text-on-primary-fixed font-bold border-2 border-primary'
-                        : 'bg-surface-container-low text-on-surface'
-                    }`}
-                  >
-                    <div className="flex items-center gap-space-sm">
-                      <span className="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center font-label-md text-label-md text-primary">
-                        #{item.rank}
+                  { name: 'Minh Anh • Lớp 8A1', expVal: 2850 },
+                  { name: 'Hoàng Nam • Lớp 8A3', expVal: 2640 },
+                  { name: 'Thảo Nguyên • Lớp 8B2', expVal: 2510 },
+                  {
+                    name: `Bạn (Nhà Thám Hiểm Cấp ${explorerLevel})`,
+                    expVal: exp,
+                    highlight: true,
+                  },
+                  { name: 'Đức Phúc • Lớp 8A1', expVal: 2190 },
+                ]
+                  .sort((a, b) => b.expVal - a.expVal)
+                  .map((item, idx) => (
+                    <div
+                      key={item.name}
+                      className={`flex items-center justify-between p-3 rounded-2xl ${
+                        item.highlight
+                          ? 'bg-primary-fixed text-on-primary-fixed font-bold border-2 border-primary'
+                          : 'bg-surface-container-low text-on-surface'
+                      }`}
+                    >
+                      <div className="flex items-center gap-space-sm">
+                        <span className="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center font-label-md text-label-md text-primary">
+                          #{idx + 1}
+                        </span>
+                        <span className="font-body-md text-body-md">{item.name}</span>
+                      </div>
+                      <span className="font-label-md text-label-md text-tertiary">
+                        {item.expVal.toLocaleString('vi-VN')} EXP
                       </span>
-                      <span className="font-body-md text-body-md">{item.name}</span>
                     </div>
-                    <span className="font-label-md text-label-md text-tertiary">{item.exp}</span>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
 

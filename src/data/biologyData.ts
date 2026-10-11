@@ -1,6 +1,6 @@
 export const IMAGES = {
-  potabiAvatar:
-    'https://lh3.googleusercontent.com/aida/AEtjO1UrqF9CCRYVdWfHu7_nV2o9aWg9beVhKOr--eZb5U0D5gZ8htnrH6WNY7CNpfmmq-VU5v9h3S_4ZvFhoJNS5370S0ZjAz_h-qVcI558BtvXXtPinAsPgU2zYKjMubi8q4L_WabhPPOTAK9oMRuSTc6DMMzv_AlYzR2NgG_4pCzHzSScdNKjjelQveTCgEP0eAdtF38Ys-ZFUTl063mGkYKzAHeP7EhyexTx2kQs_Gc4GdJ1bBahW5izBqM',
+  potabiAvatar: '/potabi-yellow.svg',
+  potabiBlueAvatar: '/potabi-blue.svg',
   mapBg:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuC3kHFNTAVlydnTL6Q8iueM7V9-m2c3mpOxiATDYxDGk_PXFo4NnERyt-Bzy6cWXjVhEANUTdX4Ew_fNqSwztATpzT4Iku7DB9QzY3eyx740WFNI3lLUd09Se38XOfWeWZaCaIniHU3QcqzRmaC63X1GV8JEH4DEubD4W9TjAiC1-QV1awFfw19jknJjaTzmfNadIX3m4vDHDTOaLhnXMY5MW9XPE03QgdG9--GoCSDsJtaP5IM33_z',
   heartThumbnail:
@@ -28,6 +28,8 @@ export interface StageInfo {
   specimensCount: number;
   thumbnail: string;
   unlocked: boolean;
+  requiredStageId?: string;
+  requiredLevel?: number;
   progress?: number;
   newlyUnlocked?: boolean;
   theoryNotes: {
@@ -43,27 +45,28 @@ export const STAGES: Record<string, StageInfo> = {
     stageNumber: 'Màn 1',
     name: 'Màn 1: Hệ Tiêu Hóa',
     subtitle: 'Dạ Dày & Ruột Non',
-    title: 'Hệ Tiêu Hóa: Cỗ Máy Xử Lý Năng Lượng',
+    title: 'Hệ Tiêu Hóa: Cỗ Máy Xử Lý Năng Lượng (Sinh học 8)',
     levelRange: 'Cấp độ 10-12',
     difficulty: 'Độ khó: Dễ',
     duration: '12 phút',
     caption: 'Hang động Dạ dày & Thung lũng Nhung mao',
-    goal: 'Khám phá sự phân giải thức ăn từ dạ dày qua ruột non và cơ chế hấp thu chất dinh dưỡng vào máu.',
+    goal: 'Khám phá sự biến đổi lý học và hóa học của thức ăn tại Khoang miệng, Thực quản, Dạ dày và Ruột non theo chương trình Sinh học 8.',
     exp: 250,
     diamonds: 15,
     quizzesCount: 3,
-    specimensCount: 2,
+    specimensCount: 4,
     thumbnail: IMAGES.stomachStageBg,
     unlocked: true,
     progress: 75,
     theoryNotes: {
-      heading: 'Cơ chế Tiêu hóa Cơ học & Hóa học',
+      heading: 'Tiêu Hóa Ở Khoang Miệng & Dạ Dày (Sinh học 8)',
       points: [
-        'Khoang miệng: Tuyến nước bọt tiết enzym Amylase biến đổi một phần tinh bột chín thành đường maltose (pH ~ 7.2).',
-        'Dạ dày: Cơ thành dạ dày co bóp nghiền nhuyễn thức ăn; dịch vị chứa HCl (pH 1.5 - 2.5) hoạt hóa Pepsinogen thành Pepsin phân giải chuỗi Protein.',
-        'Ruột non: Hệ thống lông ruột và vi nhung mao tăng diện tích hấp thu chất dinh dưỡng gấp hàng trăm lần.',
+        'Khoang miệng: Biến đổi lý học (răng nhai, lưỡi đảo trộn) và hóa học (enzym Amylase trong nước bọt biến đổi một phần tinh bột chín thành đường đôi Maltose ở pH ~ 7.2, 37°C).',
+        'Dạ dày: Cấu tạo 3 lớp cơ trơn (cơ dọc, cơ vòng, cơ chéo) co bóp nghiền thức ăn; tuyến vị tiết HCl (pH 1.5 - 2.5) hoạt hóa Pepsinogen thành Pepsin cắt chuỗi Protein dài thành chuỗi ngắn (3 - 10 axit amin).',
+        'Bảo vệ niêm mạc: Chất nhầy (Mucin) phủ kín bề mặt niêm mạc dạ dày ngăn HCl và Pepsin tự phân hủy thành dạ dày.',
       ],
-      formulaOrKey: 'Tinh bột + Amylase → Đường Maltose | Protein + Pepsin (HCl) → Chuỗi Polypeptide ngắn',
+      formulaOrKey:
+        'Tinh bột chín --(Amylase, pH 7.2)--> Đường Maltose | Protein --(Pepsin + HCl, pH 1.5-2.5)--> Polypeptide ngắn',
     },
   },
   'tuan-hoan': {
@@ -82,16 +85,18 @@ export const STAGES: Record<string, StageInfo> = {
     quizzesCount: 3,
     specimensCount: 1,
     thumbnail: IMAGES.heartThumbnail,
-    unlocked: true,
+    unlocked: false,
+    requiredStageId: 'tieu-hoa',
     newlyUnlocked: true,
     theoryNotes: {
-      heading: 'Cấu tạo Tim & Vòng Tuần Hoàn Kép',
+      heading: 'Cấu tạo Tim & Vòng Tuần Hoàn Kép (Sinh học 8)',
       points: [
-        'Tim người có 4 ngăn: Tâm nhĩ phải, Tâm thất phải (chứa máu đỏ thẫm giàu CO2) và Tâm nhĩ trái, Tâm thất trái (chứa máu đỏ tươi giàu O2).',
-        'Vòng tuần hoàn nhỏ: Đưa máu từ Tâm thất phải lên Phổi để thải CO2 và nhận O2, rồi trở về Tâm nhĩ trái.',
-        'Vòng tuần hoàn lớn: Đưa máu giàu O2 từ Tâm thất trái qua Động mạch chủ đi nuôi khắp các mô và tế bào.',
+        'Tim người có 4 ngăn: Tâm nhĩ phải, Tâm thất phải (chứa máu đỏ thẫm giàu CO2) và Tâm nhĩ trái, Tâm thất trái (chứa máu đỏ tươi giàu O2). Van nhĩ-thất và van tổ chim giúp máu chảy một chiều.',
+        'Vòng tuần hoàn nhỏ: Tâm thất phải → Động mạch phổi → Mao mạch phổi (trao đổi khí) → Tĩnh mạch phổi → Tâm nhĩ trái.',
+        'Vòng tuần hoàn lớn: Tâm thất trái → Động mạch chủ → Mao mạch các cơ quan (trao đổi chất & khí) → Tĩnh mạch chủ → Tâm nhĩ phải.',
       ],
-      formulaOrKey: 'Chu kỳ tim = 0.8s (Pha nhĩ co 0.1s → Pha thất co 0.3s → Pha dãn chung 0.4s)',
+      formulaOrKey:
+        'Chu kỳ tim = 0.8s (Pha nhĩ co 0.1s → Pha thất co 0.3s → Pha dãn chung 0.4s, nhịp tim ~ 75 lần/phút)',
     },
   },
   'ho-hap': {
@@ -107,18 +112,20 @@ export const STAGES: Record<string, StageInfo> = {
     goal: 'Theo dõi hành trình của phân tử Oxy qua khí quản đến phế nang và đi vào hồng cầu.',
     exp: 320,
     diamonds: 25,
-    quizzesCount: 4,
+    quizzesCount: 3,
     specimensCount: 1,
     thumbnail: IMAGES.cutsceneToastBg,
-    unlocked: true,
+    unlocked: false,
+    requiredStageId: 'tuan-hoan',
     theoryNotes: {
-      heading: 'Sự Khuếch Tán Khí tại Phế Nang',
+      heading: 'Sự Khuếch Tán Khí tại Phế Nang & Tế Bào (Sinh học 8)',
       points: [
-        'Phổi được cấu tạo từ khoảng 700 - 800 triệu phế nang bao bọc bởi mạng lưới mao mạch máu dày đặc.',
-        'Trao đổi khí diễn ra theo cơ chế khuếch tán từ nơi có phân áp cao sang nơi có phân áp thấp.',
-        'Hemoglobin (Hb) trong hồng cầu kết hợp thuận nghịch với O2 tạo thành Oxyhemoglobin (HbO2) có màu đỏ tươi.',
+        'Phổi có khoảng 700 - 800 triệu phế nang tạo diện tích bề mặt trao đổi khí lên tới 70 - 80 m².',
+        'Tại phổi: O2 khuếch tán từ phế nang vào máu mao mạch; CO2 khuếch tán từ máu ra phế nang.',
+        'Tại tế bào: O2 khuếch tán từ máu vào dịch mô và tế bào để thực hiện hô hấp tế bào tạo năng lượng ATP; CO2 đi từ tế bào vào máu.',
       ],
-      formulaOrKey: 'Hb + O2 ⇄ HbO2 (Tại phổi: chiều thuận; Tại mô tế bào: chiều nghịch)',
+      formulaOrKey:
+        'Hb + O2 ⇄ HbO2 (Máu đỏ tươi ở động mạch phổi về tim) | Hb + CO2 ⇄ HbCO2 (Máu đỏ thẫm)',
     },
   },
   'than-kinh': {
@@ -131,20 +138,22 @@ export const STAGES: Record<string, StageInfo> = {
     difficulty: 'Độ khó: Khó',
     duration: '20 phút',
     caption: 'Cung phản xạ & Synapse thần kinh',
-    goal: 'Mở khóa ở Cấp độ 15 để khám phá cách nơ-ron truyền tín hiệu điện hóa siêu tốc.',
+    goal: 'Mở khóa ở Cấp độ 15 (sau khi hoàn thành Màn 3) để khám phá cách nơ-ron truyền tín hiệu điện hóa.',
     exp: 400,
     diamonds: 35,
     quizzesCount: 5,
     specimensCount: 2,
     thumbnail: IMAGES.mapBg,
     unlocked: false,
+    requiredStageId: 'ho-hap',
+    requiredLevel: 15,
     theoryNotes: {
-      heading: 'Cấu tạo Nơ-ron & Cung Phản Xạ',
+      heading: 'Cấu tạo Nơ-ron & Cung Phản Xạ (Sinh học 8)',
       points: [
-        'Mỗi nơ-ron gồm thân chứa nhân, các sợi nhánh tiếp nhận kích thích và sợi trục truyền xung thần kinh.',
-        'Một cung phản xạ gồm 5 khâu: Cơ quan thụ cảm → Nơ-ron hướng tâm → Trung ương thần kinh → Nơ-ron ly tâm → Cơ quan phản ứng.',
+        'Đơn vị cấu tạo của hệ thần kinh là Nơ-ron gồm: Thân chứa nhân, các sợi nhánh (hướng tâm) và 1 sợi trục (ly tâm, thường có bao Myelin).',
+        'Cung phản xạ gồm 5 thành phần: Cơ quan thụ cảm → Nơ-ron hướng tâm → Nơ-ron trung gian (Trung ương TK) → Nơ-ron li tâm → Cơ quan phản ứng.',
       ],
-      formulaOrKey: 'Tốc độ dẫn truyền xung thần kinh trên sợi có bao Myelin đạt tới 100 - 120 m/s',
+      formulaOrKey: 'Chức năng cơ bản của Nơ-ron: Cảm ứng (phát sinh xung thần kinh) và Dẫn truyền xung thần kinh.',
     },
   },
   'van-dong': {
@@ -164,13 +173,15 @@ export const STAGES: Record<string, StageInfo> = {
     specimensCount: 2,
     thumbnail: IMAGES.mapBg,
     unlocked: false,
+    requiredStageId: 'than-kinh',
+    requiredLevel: 18,
     theoryNotes: {
-      heading: 'Hệ Cơ - Xương - Khớp',
+      heading: 'Hệ Cơ - Xương - Khớp (Sinh học 8)',
       points: [
-        'Xương có tính bền chắc nhờ muối khoáng (Canxi) và tính đàn hồi nhờ chất cốt giao (Collagen).',
-        'Tế bào cơ vân co rút khi các tơ cơ mảnh (Actin) trượt sâu vào vùng phân bố của tơ cơ dày (Myosin) dưới tác dụng của năng lượng ATP.',
+        'Thành phần hóa học của xương: Chất hữu cơ (cốt giao) đảm bảo tính đàn hồi/mềm dẻo; Chất vô cơ (muối canxi) đảm bảo tính bền chắc.',
+        'Xương to ra về bề ngang nhờ các tế bào màng xương phân chia; xương dài ra nhờ sự phân chia của các tế bào ở sụn tăng trưởng.',
       ],
-      formulaOrKey: 'Chất cốt giao (mềm dẻo) + Muối khoáng Canxi (vững chắc) = Độ bền khung xương',
+      formulaOrKey: 'Chất cốt giao (mềm dẻo) + Muối khoáng Canxi (rắn chắc) = Khung xương chịu lực tối ưu',
     },
   },
 };
@@ -182,7 +193,7 @@ export interface NotebookEntry {
   unlocked: boolean;
   summary: string;
   detail: string;
-  stainColor?: string;
+  specimenKey?: string;
 }
 
 export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
@@ -192,15 +203,17 @@ export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
     category: 'Tế Bào',
     unlocked: true,
     summary: 'Tế bào máu hình đĩa lõm hai mặt, không có nhân, chuyên chở O2 và CO2.',
-    detail: 'Hình dạng đĩa lõm hai mặt giúp tăng diện tích tiếp xúc với khí O2 và giúp hồng cầu dễ dàng uốn biến dạng khi đi qua các mao mạch siêu nhỏ.',
+    detail:
+      'Hình dạng đĩa lõm hai mặt giúp tăng diện tích tiếp xúc với khí O2 và giúp hồng cầu dễ dàng uốn biến dạng khi đi qua các mao mạch siêu nhỏ. Mỗi ml máu chứa khoảng 4,2 - 4,5 triệu hồng cầu.',
   },
   {
     id: 'bach-cau',
     title: 'Bạch Cầu (Leukocyte)',
     category: 'Tế Bào',
     unlocked: true,
-    summary: 'Chiến binh bảo vệ cơ thể thông qua thực bào và tiết kháng thể.',
-    detail: 'Bạch cầu có khả năng xuyên mạch và tạo chân giả bắt nuốt vi khuẩn xâm nhập (thực bào), đồng thời tế bào Lympho B tiết kháng thể vô hiệu hóa kháng nguyên.',
+    summary: 'Chiến binh bảo vệ cơ thể thông qua 3 hàng rào: thực bào, tiết kháng thể và phá hủy tế bào nhiễm.',
+    detail:
+      'Bạch cầu trung tính và đại thực bào bắt nuốt vi khuẩn; Tế bào B tiết kháng thể vô hiệu hóa kháng nguyên; Tế bào T tiết protein đặc hiệu phá hủy tế bào đã nhiễm bệnh.',
   },
   {
     id: 'tieu-cau',
@@ -208,31 +221,56 @@ export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
     category: 'Tế Bào',
     unlocked: true,
     summary: 'Mảnh tế bào chất tham gia giải phóng enzym giúp đông máu bảo vệ vết thương.',
-    detail: 'Khi chạm vào vết rách thành mạch, tiểu cầu vỡ ra giải phóng enzym tạo tơ máu (fibrin) ôm giữ các tế bào máu thành cục máu đông.',
+    detail:
+      'Khi chạm vào vết rách thành mạch, tiểu cầu vỡ ra giải phóng enzym biến chất sinh tơ máu (Fibrinogen) trong huyết tương thành mạng lưới tơ máu (Fibrin) giữ tế bào máu tạo cục máu đông.',
   },
   {
     id: 'vay-hanh',
     title: 'Tế Bào Biểu Bì Vảy Hành',
     category: 'Tế Bào',
     unlocked: true,
-    summary: 'Các khoang tế bào thực vật xếp sát nhau như viên gạch với thành xenlulozơ rõ nét.',
-    detail: 'Khi nhuộm bằng dung dịch Iốt (Lugol) hoặc Xanh Methylene, nhân tế bào và vách tế bào hiện lên rất rõ dưới kính hiển vi quang học ở độ phóng đại 40x - 100x.',
+    summary: 'Các khoang tế bào xếp sát nhau với vách tế bào, màng sinh chất, chất tế bào và nhân rõ nét.',
+    detail:
+      'Khi nhuộm bằng dung dịch Iốt (Lugol) hoặc Xanh Methylene, nhân tế bào và cấu trúc màng hiện lên rõ rệt dưới kính hiển vi quang học ở độ phóng đại 40x - 100x.',
   },
   {
     id: 'amylase',
     title: 'Enzym Amylase Nước Bọt',
     category: 'Enzym & Hoạt Chất',
     unlocked: true,
-    summary: 'Xúc tác phân giải tinh bột chín thành đường đôi Maltose ngay tại khoang miệng.',
-    detail: 'Hoạt động tốt nhất ở nhiệt độ 37°C và môi trường pH gần trung tính (pH ~ 6.8 - 7.2). Bị bất hoạt khi xuống môi trường axit mạnh của dạ dày.',
+    summary: 'Xúc tác biến đổi một phần tinh bột chín thành đường đôi Maltose ngay tại khoang miệng.',
+    detail:
+      'Hoạt động tốt nhất ở nhiệt độ 37°C và môi trường pH gần trung tính (pH ~ 7.2). Khi nuốt xuống dạ dày (pH 1.5 - 2.5), Amylase bị bất hoạt bởi môi trường axit mạnh.',
   },
   {
     id: 'pepsin',
     title: 'Enzym Pepsin & Axit HCl',
     category: 'Enzym & Hoạt Chất',
-    unlocked: true,
-    summary: 'Cặp đôi dịch vị dạ dày giúp cắt nhỏ chuỗi protein dài thành các đoạn ngắn.',
-    detail: 'Axit HCl (pH 1.5 - 2.5) vừa tiêu diệt vi khuẩn theo thức ăn, vừa kích hoạt Pepsinogen thành Pepsin hoạt động.',
+    unlocked: false,
+    specimenKey: 'tram-2',
+    summary: 'Cặp đôi dịch vị dạ dày giúp cắt nhỏ chuỗi protein dài thành các chuỗi ngắn 3 - 10 axit amin.',
+    detail:
+      'Axit HCl (pH 1.5 - 2.5) do tế bào viền tiết ra giúp tiêu diệt vi khuẩn và hoạt hóa Pepsinogen (do tế bào chính tiết ra) thành enzym Pepsin hoạt động.',
+  },
+  {
+    id: 'co-da-day',
+    title: 'Ba Lớp Cơ Trơn Thành Dạ Dày',
+    category: 'Hệ Cơ Quan',
+    unlocked: false,
+    specimenKey: 'tram-1',
+    summary: 'Gồm cơ dọc (ngoài), cơ vòng (giữa) và cơ chéo (trong) tạo lực co bóp cực khỏe.',
+    detail:
+      'Sự phối hợp co rút của 3 lớp cơ trơn giúp dạ dày nhào trộn kỹ thức ăn với dịch vị, biến thức ăn thành khối nhuyễn gọi là vị trấp trước khi đẩy xuống tá tràng.',
+  },
+  {
+    id: 'chat-nhay-mucin',
+    title: 'Màng Chất Nhầy Mucin Niêm Mạc',
+    category: 'Enzym & Hoạt Chất',
+    unlocked: false,
+    specimenKey: 'tram-3',
+    summary: 'Lớp chất nhầy kiềm tính phủ kín niêm mạc giúp dạ dày không bị tự tiêu hủy.',
+    detail:
+      'Nhờ lớp chất nhầy dày khoảng 1mm bao phủ bề mặt niêm mạc, các tế bào protein của chính thành dạ dày được bảo vệ hoàn toàn khỏi sự ăn mòn của HCl và Pepsin.',
   },
 ];
 
@@ -263,7 +301,7 @@ export const OUTFITS: OutfitItem[] = [
   {
     id: 'blouse-bac-si',
     name: 'Áo Blouse Bác Sĩ Vi Sinh',
-    roleBonus: '+15% Kháng axit dạ dày & Mở khóa góc nhìn Y khoa',
+    roleBonus: 'Kháng 50% sát thương axit dạ dày & Mở khóa gợi ý Y khoa',
     description: 'Áo choàng trắng vô trùng giúp Potabi an toàn khi lặn vào dịch vị dạ dày và dòng máu.',
     rarity: 'Vàng',
     priceDiamonds: 120,
@@ -274,8 +312,8 @@ export const OUTFITS: OutfitItem[] = [
   {
     id: 'giot-nuoc-nano',
     name: 'Giáp Giọt Nước Thẩm Thấu',
-    roleBonus: '+20% Tốc độ di chuyển trong Mao mạch',
-    description: 'Lớp màng sinh học trong suốt giúp Potabi trượt êm qua các van tim và thành mao mạch hẹp.',
+    roleBonus: '+25% Tốc độ di chuyển & Nhảy cao hơn trong màn 2D',
+    description: 'Lớp màng sinh học trong suốt giúp Potabi trượt êm qua các thành niêm mạc và mao mạch hẹp.',
     rarity: 'Hiếm',
     priceDiamonds: 90,
     owned: true,
@@ -285,8 +323,8 @@ export const OUTFITS: OutfitItem[] = [
   {
     id: 'kinh-hien-vi-quang',
     name: 'Kính Soi Quang Phổ Lục Lạp',
-    roleBonus: 'Tự động phát hiện Mẫu vật ẩn trên bản đồ',
-    description: 'Thấu kính sinh học lấy cảm hứng từ tế bào thực vật giúp nhận diện nhanh cấu trúc bào quan.',
+    roleBonus: 'Hiển thị phạm vi tương tác Trạm & Gợi ý Sinh học 8',
+    description: 'Thấu kính sinh học lấy cảm hứng từ tế bào thực vật giúp nhận diện nhanh cấu trúc cơ quan.',
     rarity: 'Vàng',
     priceDiamonds: 150,
     owned: false,

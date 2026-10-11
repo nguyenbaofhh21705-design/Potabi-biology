@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch tích hợp Supabase (Auth, PostgreSQL, RLS, Đồng bộ tiến trình thông minh, Offline Queue và Lộ trình 6 giai đoạn) cho Potabi Sinh Học – Học Viện Khám Phá 2D.",
+  "updatedAt":  "2026-10-11T08:40:08.712934165Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

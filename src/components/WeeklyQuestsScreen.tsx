@@ -3,45 +3,58 @@ import { IMAGES } from '../data/biologyData';
 
 interface WeeklyQuestsScreenProps {
   onOpenNotebook: () => void;
-  onClaimReward: (exp: number, diamonds: number) => void;
+  weeklyQuests: {
+    enzymeQuizDone: boolean;
+    bloodCellMatchDone: boolean;
+    oxygenPathDone: boolean;
+    chestClaimed: boolean;
+  };
+  onCompleteEnzymeQuiz: () => void;
+  onCompleteBloodCellMatch: () => void;
+  onClaimChest: () => void;
 }
 
 export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
   onOpenNotebook,
-  onClaimReward,
+  weeklyQuests,
+  onCompleteEnzymeQuiz,
+  onCompleteBloodCellMatch,
+  onClaimChest,
 }) => {
-  const [chestExp, setChestExp] = useState<number>(80);
-  const [chestOpened, setChestOpened] = useState<boolean>(false);
-
   // Challenge 1 state (Quiz)
-  const [quizCompleted, setQuizCompleted] = useState<boolean>(false);
   const [showQuizModal, setShowQuizModal] = useState<boolean>(false);
   const [quizStep, setQuizStep] = useState<number>(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [showQuizHint, setShowQuizHint] = useState<boolean>(false);
 
   // Challenge 2 state (Matching)
-  const [matchCompleted, setMatchCompleted] = useState<boolean>(false);
   const [showMatchModal, setShowMatchModal] = useState<boolean>(false);
   const [matches, setMatches] = useState<Record<string, string>>({});
+  const [matchFeedback, setMatchFeedback] = useState<'idle' | 'error' | 'success'>('idle');
 
   const quizQuestions = [
     {
-      q: 'Câu 4/5: Enzym Pepsin trong dịch vị dạ dày phân giải chất nào sau đây?',
+      q: 'Câu 4/5 (Sinh học 8 - Bài 27): Enzym Pepsin trong dịch vị dạ dày có tác dụng phân giải chất nào sau đây?',
       options: [
         'A. Tinh bột chín thành đường đôi Maltose',
-        'B. Protein chuỗi dài thành các chuỗi Polypeptide ngắn',
+        'B. Protein chuỗi dài thành các chuỗi Polypeptide ngắn (3 - 10 axit amin)',
         'C. Lipit thành axit béo và glixerin',
       ],
       correct: 1,
+      hint: 'Gợi ý: Pepsin hoạt động trong môi trường axit HCl (pH 1.5 - 2.5) để cắt liên kết peptide của chất đạm.',
+      explanation: 'Chính xác! Enzym Pepsin cắt chuỗi Protein dài thành các chuỗi Polypeptide ngắn.',
     },
     {
-      q: 'Câu 5/5: Enzym Trypsin do tuyến tụy tiết ra hoạt động mạnh nhất ở đâu?',
+      q: 'Câu 5/5 (Sinh học 8 - Bài 28): Tại ruột non, dịch tụy và dịch ruột chứa đầy đủ các enzym phân giải toàn bộ thức ăn thành chất dinh dưỡng đơn giản hấp thu được. Đâu là cặp biến đổi ĐÚNG?',
       options: [
-        'A. Khoang miệng (môi trường trung tính)',
-        'B. Dạ dày (môi trường axit pH 1.5 - 2.5)',
-        'C. Ruột non (môi trường kiềm nhẹ pH 7.5 - 8.5)',
+        'A. Tinh bột → Đường đơn Glucose; Protein → Axit amin; Lipit → Axit béo & Glixerin',
+        'B. Tinh bột → Axit amin; Protein → Glixerin; Lipit → Đường Maltose',
+        'C. Ruột non chỉ hấp thu nước chứ không có enzym tiêu hóa',
       ],
-      correct: 2,
+      correct: 0,
+      hint: 'Gợi ý: Đơn phân của Protein là Axit amin, còn đơn phân của Tinh bột là đường Glucose.',
+      explanation:
+        'Xuất sắc! Tại ruột non, quá trình tiêu hóa hóa học hoàn tất tạo ra các chất đơn giản hòa tan để lông ruột hấp thu.',
     },
   ];
 
@@ -50,11 +63,10 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
     if (quizStep < quizQuestions.length - 1) {
       setQuizStep((prev) => prev + 1);
       setSelectedOption(null);
+      setShowQuizHint(false);
     } else {
-      setQuizCompleted(true);
+      onCompleteEnzymeQuiz();
       setShowQuizModal(false);
-      setChestExp((prev) => Math.min(100, prev + 20));
-      onClaimReward(120, 25);
     }
   };
 
@@ -64,15 +76,27 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
       matches['bach-cau'] === 'mien-dich' &&
       matches['tieu-cau'] === 'dong-mau'
     ) {
-      setMatchCompleted(true);
-      setShowMatchModal(false);
-      setChestExp((prev) => Math.min(100, prev + 20));
-      onClaimReward(150, 30);
+      setMatchFeedback('success');
+      setTimeout(() => {
+        onCompleteBloodCellMatch();
+        setShowMatchModal(false);
+      }, 600);
+    } else {
+      setMatchFeedback('error');
     }
   };
 
-  const completedCount = 1 + (quizCompleted ? 1 : 0) + (matchCompleted ? 1 : 0);
-  const weeklyExp = 370 + (quizCompleted ? 120 : 0) + (matchCompleted ? 150 : 0);
+  const completedCount =
+    (weeklyQuests.oxygenPathDone ? 1 : 0) +
+    (weeklyQuests.enzymeQuizDone ? 1 : 0) +
+    (weeklyQuests.bloodCellMatchDone ? 1 : 0);
+
+  const chestExp = Math.min(
+    100,
+    80 + (weeklyQuests.enzymeQuizDone ? 20 : 0) + (weeklyQuests.bloodCellMatchDone ? 20 : 0)
+  );
+  const weeklyExp =
+    370 + (weeklyQuests.enzymeQuizDone ? 120 : 0) + (weeklyQuests.bloodCellMatchDone ? 150 : 0);
 
   return (
     <div className="flex flex-col w-full">
@@ -160,20 +184,21 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   <div className="w-28 h-28 rounded-full bg-tertiary-fixed-dim/40 absolute animate-ping opacity-40"></div>
                   <button
                     onClick={() => {
-                      if (chestExp >= 100 && !chestOpened) {
-                        setChestOpened(true);
-                        onClaimReward(200, 50);
+                      if (chestExp >= 100 && !weeklyQuests.chestClaimed) {
+                        onClaimChest();
                       }
                     }}
                     className={`w-24 h-24 rounded-full bg-gradient-to-br from-tertiary-fixed-dim to-tertiary-fixed flex items-center justify-center shadow-[0_8px_0_#9a6c00] relative transition-transform ${
-                      chestExp >= 100 ? 'cursor-pointer hover:scale-105' : ''
+                      chestExp >= 100 && !weeklyQuests.chestClaimed
+                        ? 'cursor-pointer hover:scale-105'
+                        : ''
                     }`}
                   >
                     <span
                       className="material-symbols-outlined text-5xl text-on-tertiary-fixed"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
-                      {chestOpened ? 'redeem' : 'card_giftcard'}
+                      {weeklyQuests.chestClaimed ? 'redeem' : 'card_giftcard'}
                     </span>
                     <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold shadow">
                       3
@@ -185,8 +210,8 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   Rương Khám Phá Vi Sinh Vật
                 </p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs">
-                  {chestOpened
-                    ? 'Chúc mừng! Bạn đã mở khóa Áo Blouse Bác sĩ Vi Sinh (+200 EXP, +50 KC)!'
+                  {weeklyQuests.chestClaimed
+                    ? 'Đã mở Rương! Bạn đã nhận +200 EXP, +50 Kim cương và mở khóa trang phục học viện!'
                     : 'Mở khóa để nhận vật phẩm độc quyền trang phục học viện!'}
                 </p>
 
@@ -245,7 +270,12 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   </div>
                   <div className="relative bg-surface-container-low px-space-md py-space-sm rounded-2xl text-on-surface">
                     <p className="font-body-sm text-body-sm leading-relaxed">
-                      {chestExp >= 100 ? (
+                      {weeklyQuests.chestClaimed ? (
+                        <>
+                          “Bạn đã nhận thưởng Rương Sinh Học Cấp 3 tuần này rồi! Tiến trình đã được
+                          lưu tự động vào Hồ Sơ của bạn!”
+                        </>
+                      ) : chestExp >= 100 ? (
                         <>
                           “Tuyệt vời quá! Rương Sinh Học Cấp 3 đã đủ 100/100 EXP rồi, bạn bấm vào{' '}
                           <strong className="text-primary font-bold">Rương Vàng</strong> phía trên
@@ -337,7 +367,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                     <div>
                       <div className="flex items-center gap-space-xs">
                         <span className="font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed px-space-sm py-0.5 rounded-full font-bold">
-                          Trắc nghiệm Sinh học 7
+                          Trắc nghiệm Sinh học 8
                         </span>
                         <span className="font-label-sm text-label-sm text-primary font-bold">
                           • 5 Phút
@@ -350,7 +380,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   </div>
                   <div className="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full">
                     <span className="font-label-md text-label-md text-primary font-bold">
-                      {quizCompleted ? 'Hoàn thành 5/5 câu ✔' : 'Tiến độ: 3/5 câu'}
+                      {weeklyQuests.enzymeQuizDone ? 'Hoàn thành 5/5 câu ✔' : 'Tiến độ: 3/5 câu'}
                     </span>
                   </div>
                 </div>
@@ -363,7 +393,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                 <div className="w-full bg-surface-container rounded-full h-3 overflow-hidden">
                   <div
                     className="bg-primary h-full rounded-full transition-all duration-300"
-                    style={{ width: quizCompleted ? '100%' : '60%' }}
+                    style={{ width: weeklyQuests.enzymeQuizDone ? '100%' : '60%' }}
                   ></div>
                 </div>
 
@@ -388,17 +418,24 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   </div>
 
                   <button
-                    disabled={quizCompleted}
-                    onClick={() => setShowQuizModal(true)}
+                    disabled={weeklyQuests.enzymeQuizDone}
+                    onClick={() => {
+                      setQuizStep(0);
+                      setSelectedOption(null);
+                      setShowQuizHint(false);
+                      setShowQuizModal(true);
+                    }}
                     className={`w-full sm:w-auto px-space-lg py-space-sm font-label-lg text-label-lg rounded-full transition-all flex items-center justify-center gap-space-xs ${
-                      quizCompleted
+                      weeklyQuests.enzymeQuizDone
                         ? 'bg-surface-container text-on-surface-variant cursor-not-allowed opacity-75'
                         : 'bg-primary text-on-primary shadow-[0_5px_0_#4a2433] hover:bg-primary-container hover:-translate-y-0.5 active:translate-y-1 cursor-pointer'
                     }`}
                   >
-                    <span>{quizCompleted ? 'Đã nhận thưởng' : 'Thực hiện thử thách'}</span>
+                    <span>
+                      {weeklyQuests.enzymeQuizDone ? 'Đã nhận thưởng' : 'Thực hiện thử thách'}
+                    </span>
                     <span className="material-symbols-outlined text-base">
-                      {quizCompleted ? 'task_alt' : 'arrow_forward'}
+                      {weeklyQuests.enzymeQuizDone ? 'task_alt' : 'arrow_forward'}
                     </span>
                   </button>
                 </div>
@@ -417,7 +454,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                           Ghép Đôi Thuật Ngữ
                         </span>
                         <span className="font-label-sm text-label-sm text-primary font-bold">
-                          • Kéo thả
+                          • Tương tác
                         </span>
                       </div>
                       <h3 className="font-headline-sm text-headline-sm text-on-surface mt-0.5">
@@ -427,7 +464,9 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   </div>
                   <div className="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full">
                     <span className="font-label-md text-label-md text-on-surface-variant font-bold">
-                      {matchCompleted ? 'Hoàn thành 1/1 bộ ✔' : 'Tiến độ: 0/1 bộ'}
+                      {weeklyQuests.bloodCellMatchDone
+                        ? 'Hoàn thành 1/1 bộ ✔'
+                        : 'Tiến độ: 0/1 bộ'}
                     </span>
                   </div>
                 </div>
@@ -442,7 +481,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                 <div className="w-full bg-surface-container rounded-full h-3 overflow-hidden">
                   <div
                     className="bg-primary h-full rounded-full transition-all duration-300"
-                    style={{ width: matchCompleted ? '100%' : '0%' }}
+                    style={{ width: weeklyQuests.bloodCellMatchDone ? '100%' : '0%' }}
                   ></div>
                 </div>
 
@@ -467,17 +506,22 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   </div>
 
                   <button
-                    disabled={matchCompleted}
-                    onClick={() => setShowMatchModal(true)}
+                    disabled={weeklyQuests.bloodCellMatchDone}
+                    onClick={() => {
+                      setMatchFeedback('idle');
+                      setShowMatchModal(true);
+                    }}
                     className={`w-full sm:w-auto px-space-lg py-space-sm font-label-lg text-label-lg rounded-full transition-all flex items-center justify-center gap-space-xs ${
-                      matchCompleted
+                      weeklyQuests.bloodCellMatchDone
                         ? 'bg-surface-container text-on-surface-variant cursor-not-allowed opacity-75'
                         : 'bg-primary text-on-primary shadow-[0_5px_0_#4a2433] hover:bg-primary-container hover:-translate-y-0.5 active:translate-y-1 cursor-pointer'
                     }`}
                   >
-                    <span>{matchCompleted ? 'Đã nhận thưởng' : 'Thực hiện thử thách'}</span>
+                    <span>
+                      {weeklyQuests.bloodCellMatchDone ? 'Đã nhận thưởng' : 'Thực hiện thử thách'}
+                    </span>
                     <span className="material-symbols-outlined text-base">
-                      {matchCompleted ? 'task_alt' : 'arrow_forward'}
+                      {weeklyQuests.bloodCellMatchDone ? 'task_alt' : 'arrow_forward'}
                     </span>
                   </button>
                 </div>
@@ -598,9 +642,23 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
               </button>
             </div>
 
-            <p className="font-label-lg text-label-lg text-primary">
-              {quizQuestions[quizStep].q}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-label-lg text-label-lg text-primary">
+                {quizQuestions[quizStep].q}
+              </p>
+              <button
+                onClick={() => setShowQuizHint(!showQuizHint)}
+                className="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold cursor-pointer shrink-0"
+              >
+                Gợi ý
+              </button>
+            </div>
+
+            {showQuizHint && (
+              <div className="bg-tertiary-fixed/40 border border-tertiary-fixed-dim p-3 rounded-2xl font-body-sm text-body-sm text-on-tertiary-fixed">
+                {quizQuestions[quizStep].hint}
+              </div>
+            )}
 
             <div className="flex flex-col gap-space-xs">
               {quizQuestions[quizStep].options.map((opt, idx) => (
@@ -616,9 +674,28 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                   }`}
                 >
                   <span>{opt}</span>
+                  {selectedOption === idx && (
+                    <span className="material-symbols-outlined text-lg">
+                      {idx === quizQuestions[quizStep].correct ? 'check_circle' : 'error'}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+
+            {selectedOption !== null && (
+              <div
+                className={`p-3 rounded-2xl font-body-sm text-body-sm ${
+                  selectedOption === quizQuestions[quizStep].correct
+                    ? 'bg-emerald-100 text-emerald-950'
+                    : 'bg-error-container text-on-error-container'
+                }`}
+              >
+                {selectedOption === quizQuestions[quizStep].correct
+                  ? quizQuestions[quizStep].explanation
+                  : 'Chưa đúng! Hãy bấm vào nút Gợi ý để xem lại kiến thức Sinh học 8 nhé.'}
+              </div>
+            )}
 
             <div className="flex justify-end gap-space-sm">
               <button
@@ -649,7 +726,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
           <div className="bg-surface-container-lowest rounded-3xl max-w-xl w-full p-space-lg shadow-2xl border-4 border-primary flex flex-col gap-space-md">
             <div className="flex items-center justify-between border-b border-surface-container-high pb-space-sm">
               <h3 className="font-headline-sm text-headline-sm text-on-surface">
-                Ghép Đôi Thuật Ngữ: Tế Bào Máu
+                Ghép Đôi Thuật Ngữ: Tế Bào Máu (Sinh học 8 - Bài 13)
               </h3>
               <button
                 onClick={() => setShowMatchModal(false)}
@@ -664,9 +741,9 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
             </p>
 
             {[
-              { id: 'hong-cau', label: '1. Hồng cầu (Erythrocyte)' },
-              { id: 'bach-cau', label: '2. Bạch cầu (Leukocyte)' },
-              { id: 'tieu-cau', label: '3. Tiểu cầu (Thrombocyte)' },
+              { id: 'hong-cau', label: '1. Hồng cầu (Chứa Hemoglobin)' },
+              { id: 'bach-cau', label: '2. Bạch cầu (Thực bào, Lympho B & T)' },
+              { id: 'tieu-cau', label: '3. Tiểu cầu (Mảnh tế bào chất)' },
             ].map((cell) => (
               <div
                 key={cell.id}
@@ -675,16 +752,32 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                 <span className="font-label-lg text-label-lg text-on-surface">{cell.label}</span>
                 <select
                   value={matches[cell.id] || ''}
-                  onChange={(e) => setMatches({ ...matches, [cell.id]: e.target.value })}
+                  onChange={(e) => {
+                    setMatchFeedback('idle');
+                    setMatches({ ...matches, [cell.id]: e.target.value });
+                  }}
                   className="px-3 py-2 rounded-full bg-surface-container-lowest border-2 border-primary/40 font-label-md text-label-md text-primary cursor-pointer"
                 >
                   <option value="">-- Chọn chức năng --</option>
                   <option value="van-chuyen-khi">Vận chuyển khí O2 và CO2</option>
                   <option value="mien-dich">Miễn dịch, thực bào bảo vệ cơ thể</option>
-                  <option value="dong-mau">Giải phóng enzym giúp đông máu</option>
+                  <option value="dong-mau">Giải phóng enzym tạo tơ máu giúp đông máu</option>
                 </select>
               </div>
             ))}
+
+            {matchFeedback === 'error' && (
+              <div className="p-3 rounded-2xl bg-error-container text-on-error-container font-body-sm text-body-sm">
+                Chưa chính xác! Gợi ý: Hồng cầu vận chuyển khí, Bạch cầu bảo vệ miễn dịch, và Tiểu
+                cầu tham gia đông máu.
+              </div>
+            )}
+
+            {matchFeedback === 'success' && (
+              <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-950 font-body-sm text-body-sm font-bold">
+                Chính xác cả 3 loại tế bào máu! Đang cộng +150 EXP và +30 Kim cương...
+              </div>
+            )}
 
             <div className="flex justify-end gap-space-sm pt-2">
               <button
