@@ -23,6 +23,7 @@ import {
   updatePlayerProfile,
 } from './data/gameProgress';
 import { getSupabaseClient, isSupabaseConfigured } from './lib/supabase';
+import { HomeScreen } from './components/HomeScreen';
 import { JourneyMapScreen } from './components/JourneyMapScreen';
 import { StoryCutsceneScreen } from './components/StoryCutsceneScreen';
 import { StomachStageScreen } from './components/StomachStageScreen';
@@ -35,6 +36,7 @@ import {
 import { AuthGateModal } from './components/AuthGateModal';
 
 export type ScreenMode =
+  | 'trang-chu'
   | 'hanh-trinh'
   | 'nhiem-vu-tuan'
   | 'trang-phuc'
@@ -43,9 +45,7 @@ export type ScreenMode =
   | 'stomach-2d';
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<ScreenMode>(() =>
-    hasExistingSaveData() ? 'hanh-trinh' : 'cutscene'
-  );
+  const [activeScreen, setActiveScreen] = useState<ScreenMode>('trang-chu');
   const [gameState, setGameState] = useState<GameProgressState>(() => loadGameProgress());
   const [activeLabTool, setActiveLabTool] = useState<
     'microscope' | 'stain' | 'notebook' | null
@@ -93,8 +93,7 @@ export default function App() {
       (user.user_metadata?.full_name as string) ||
       user.email?.split('@')[0] ||
       'Nhà Thám Hiểm Vi Mô';
-    const metaAvatar =
-      user.user_metadata?.avatar_variant === 'blue' ? 'blue' : ('yellow' as const);
+    const metaAvatar = 'blue' as const;
 
     const { profile } = await ensurePlayerProfile(user.id, metaName, metaAvatar);
     if (profile) {
@@ -336,6 +335,8 @@ export default function App() {
         unlockedStages.add('ho-hap');
       } else if (stageId === 'ho-hap') {
         unlockedStages.add('than-kinh');
+      } else if (stageId === 'than-kinh') {
+        unlockedStages.add('van-dong');
       }
 
       return {
@@ -448,7 +449,7 @@ export default function App() {
 
   const handleUpdateProfileInfo = async (updates: {
     display_name: string;
-    avatar_variant: 'yellow' | 'blue';
+    avatar_variant?: 'blue';
     grade_class: string;
   }) => {
     if (!currentUser) return;
@@ -472,38 +473,49 @@ export default function App() {
     setCloudSyncStatus(isSupabaseConfigured() ? 'idle' : 'unconfigured');
   };
 
+  const handleStartOrContinueAdventure = () => {
+    // If brand new explorer who hasn't seen the intro cutscene yet, begin the story
+    if (!gameState.cutsceneSeen) {
+      setActiveScreen('cutscene');
+    } else {
+      // Returning explorer: enter 2D stomach stage directly
+      requestEnterStomach2D();
+    }
+  };
+
   const isImmersiveGameScreen = activeScreen === 'cutscene' || activeScreen === 'stomach-2d';
-  const headerAvatarSrc =
-    playerProfile?.avatar_variant === 'blue' ? IMAGES.potabiBlueAvatar : IMAGES.potabiAvatar;
+  const headerAvatarSrc = IMAGES.potabiBlueAvatar;
 
   return (
     <div className="min-h-screen flex flex-col bg-surface text-on-surface select-none relative">
-      {/* Standard Top Header for Hub Screens (Map, Weekly Quests, Wardrobe, Profile) */}
+      {/* Standard Top Header for Hub Screens (Home, Map, Weekly Quests, Wardrobe, Profile) */}
       {!isImmersiveGameScreen && (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-          <div className="h-20 w-full px-margin flex items-center justify-between gap-space-md">
-            {/* Left Brand + Explorer Level Badge */}
-            <div className="flex items-center gap-space-md">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] safe-p-top">
+          <div className="h-16 md:h-20 w-full px-3 sm:px-6 md:px-margin flex items-center justify-between gap-2 sm:gap-space-md">
+            {/* Left Brand (Click returns to 2D Adventure Home Screen) */}
+            <div className="flex items-center gap-2 sm:gap-space-md">
               <button
-                onClick={() => setActiveScreen('hanh-trinh')}
-                className="flex items-center gap-space-sm bg-surface-container px-space-md py-space-xs rounded-full cursor-pointer"
+                onClick={() => setActiveScreen('trang-chu')}
+                title="Về Trang Chủ Thế Giới 2D"
+                className="flex items-center gap-1.5 sm:gap-space-sm bg-surface-container px-3 sm:px-space-md py-1 sm:py-space-xs rounded-full cursor-pointer hover:bg-surface-container-high transition-colors"
               >
-                <span className="font-headline-md text-headline-md text-primary tracking-tight">
+                <span className="font-headline-sm sm:font-headline-md text-headline-sm sm:text-headline-md text-primary tracking-tight">
                   Potabi
                 </span>
-                <span className="font-label-sm text-label-sm bg-primary text-on-primary px-space-sm py-0.5 rounded-full uppercase">
+                <span className="font-label-sm text-[11px] sm:text-label-sm bg-primary text-on-primary px-2 sm:px-space-sm py-0.5 rounded-full uppercase font-bold">
                   Sinh Học
                 </span>
               </button>
 
-              <div className="hidden xl:flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full">
+              {/* Explorer Level Badge (Desktop & Tablet) */}
+              <div className="hidden sm:flex items-center gap-space-sm bg-surface-container-low px-3 sm:px-space-md py-1 sm:py-space-xs rounded-full">
                 <div className="flex flex-col">
-                  <span className="font-label-md text-label-md text-on-surface">
+                  <span className="font-label-sm sm:font-label-md text-label-sm sm:text-label-md text-on-surface truncate max-w-[120px] md:max-w-none">
                     {playerProfile?.display_name || 'Nhà Thám Hiểm'}
                   </span>
                   <div className="flex items-center gap-space-xs">
                     <span className="font-label-sm text-label-sm text-primary">Cấp {level}</span>
-                    <div className="w-24 h-2 bg-secondary-container rounded-full overflow-hidden">
+                    <div className="w-16 md:w-24 h-1.5 md:h-2 bg-secondary-container rounded-full overflow-hidden">
                       <div
                         className="bg-tertiary-fixed-dim h-full rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
@@ -511,15 +523,31 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 bg-surface-container px-space-sm py-0.5 rounded-full text-tertiary font-label-md text-label-md">
-                  <span className="material-symbols-outlined text-base">diamond</span>
+                <div className="flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-full text-tertiary font-label-sm sm:font-label-md text-label-sm sm:text-label-md font-bold">
+                  <span className="material-symbols-outlined text-sm sm:text-base">diamond</span>
                   <span>{gameState.diamonds}</span>
                 </div>
               </div>
+
+              {/* Mobile-only compact diamond counter */}
+              <div className="flex sm:hidden items-center gap-1 bg-surface-container px-2.5 py-1 rounded-full text-tertiary font-label-sm text-label-sm font-bold">
+                <span className="material-symbols-outlined text-sm">diamond</span>
+                <span>{gameState.diamonds}</span>
+              </div>
             </div>
 
-            {/* Center Navigation Pills */}
-            <nav className="flex items-center gap-space-sm bg-surface-container-high/80 p-1.5 rounded-full">
+            {/* Center Navigation Pills (Desktop only >= 1024px) */}
+            <nav className="hidden lg:flex items-center gap-space-sm bg-surface-container-high/80 p-1.5 rounded-full">
+              <button
+                onClick={() => setActiveScreen('trang-chu')}
+                className={`px-space-md py-1.5 rounded-full font-label-lg text-label-lg transition-all cursor-pointer whitespace-nowrap ${
+                  activeScreen === 'trang-chu'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                }`}
+              >
+                Trang chủ
+              </button>
               <button
                 onClick={() => setActiveScreen('hanh-trinh')}
                 className={`px-space-md py-1.5 rounded-full font-label-lg text-label-lg transition-all cursor-pointer whitespace-nowrap ${
@@ -563,7 +591,7 @@ export default function App() {
             </nav>
 
             {/* Right Quick Screen Switcher, Cloud Sync Badge & Profile Avatar */}
-            <div className="flex items-center gap-space-sm">
+            <div className="flex items-center gap-1.5 sm:gap-space-sm">
               <button
                 onClick={() => setActiveScreen('cutscene')}
                 title="Xem Hoạt cảnh Cốt truyện 2D"
@@ -575,7 +603,7 @@ export default function App() {
               <button
                 onClick={requestEnterStomach2D}
                 title="Vào Màn chơi Thử thách 2D"
-                className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed hover:opacity-90 font-label-sm text-label-sm cursor-pointer transition-opacity"
+                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed hover:opacity-90 font-label-sm text-label-sm cursor-pointer transition-opacity font-bold shadow-sm"
               >
                 <span className="material-symbols-outlined text-base">sports_esports</span>
                 <span>Màn 2D Dạ Dày</span>
@@ -620,13 +648,13 @@ export default function App() {
               <button
                 onClick={() => handleOpenLabTool('notebook')}
                 title="Mở Sổ tay Sinh học"
-                className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined">settings</span>
+                <span className="material-symbols-outlined text-lg sm:text-xl">settings</span>
               </button>
               <button
                 onClick={() => setActiveScreen('ho-so')}
-                className="w-8 h-8 rounded-full overflow-hidden cursor-pointer ring-2 ring-primary/30 bg-surface-container-low p-0.5"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden cursor-pointer ring-2 ring-primary/30 bg-surface-container-low p-0.5 flex items-center justify-center"
               >
                 <img
                   alt="Profile"
@@ -641,7 +669,23 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={isImmersiveGameScreen ? 'w-full h-screen' : 'w-full pt-20 bg-surface flex-1'}>
+      <main className={isImmersiveGameScreen ? 'w-full h-screen overflow-hidden' : 'w-full pt-16 md:pt-20 pb-24 lg:pb-8 bg-surface flex-1'}>
+        {activeScreen === 'trang-chu' && (
+          <HomeScreen
+            gameState={gameState}
+            playerProfile={playerProfile}
+            currentUser={currentUser}
+            onNavigate={(screen) => setActiveScreen(screen)}
+            onStartOrContinueAdventure={handleStartOrContinueAdventure}
+            onOpenLabTool={handleOpenLabTool}
+            onRequestEnterStomach2D={requestEnterStomach2D}
+            onOpenAuthModal={() => {
+              setPending2DNavigation(false);
+              setIsAuthModalOpen(true);
+            }}
+          />
+        )}
+
         {activeScreen === 'hanh-trinh' && (
           <JourneyMapScreen
             completedStageIds={gameState.completedStageIds}
@@ -730,10 +774,105 @@ export default function App() {
         )}
       </main>
 
+      {/* Mobile & Tablet Fixed Bottom Navigation Bar (< 1024px) */}
+      {!isImmersiveGameScreen && (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-surface/95 backdrop-blur-xl border-t border-surface-container-high/80 shadow-[0_-4px_16px_rgba(49,16,30,0.08)] safe-p-bottom">
+          <div className="h-16 px-1.5 sm:px-4 flex items-center justify-around gap-1 max-w-lg mx-auto">
+            {/* Tab 1: Trang chủ 2D */}
+            <button
+              onClick={() => setActiveScreen('trang-chu')}
+              className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer ${
+                activeScreen === 'trang-chu'
+                  ? 'text-primary font-bold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <div
+                className={`p-1 rounded-full transition-all ${
+                  activeScreen === 'trang-chu' ? 'bg-primary-fixed text-on-primary-fixed scale-110 shadow-sm' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">cottage</span>
+              </div>
+              <span className="text-[11px] font-label-sm mt-0.5 whitespace-nowrap">Trang chủ</span>
+            </button>
+
+            {/* Tab 2: Hành trình */}
+            <button
+              onClick={() => setActiveScreen('hanh-trinh')}
+              className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer ${
+                activeScreen === 'hanh-trinh'
+                  ? 'text-primary font-bold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <div
+                className={`p-1 rounded-full transition-all ${
+                  activeScreen === 'hanh-trinh' ? 'bg-primary-fixed text-on-primary-fixed scale-110 shadow-sm' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">map</span>
+              </div>
+              <span className="text-[11px] font-label-sm mt-0.5 whitespace-nowrap">Hành trình</span>
+            </button>
+
+            {/* Center Prominent 2D Action Button */}
+            <button
+              onClick={requestEnterStomach2D}
+              title="Vào Chơi Màn 2D Dạ Dày"
+              className="flex flex-col items-center justify-center -mt-5 mx-1 group cursor-pointer"
+            >
+              <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-tertiary to-tertiary-fixed-dim text-on-tertiary-fixed flex items-center justify-center shadow-lg ring-4 ring-surface active:scale-95 transition-transform">
+                <span className="material-symbols-outlined text-2xl font-bold animate-pulse">sports_esports</span>
+              </div>
+              <span className="text-[10px] font-label-sm font-bold text-tertiary mt-0.5">Màn 2D</span>
+            </button>
+
+            {/* Tab 3: Nhiệm vụ tuần */}
+            <button
+              onClick={() => setActiveScreen('nhiem-vu-tuan')}
+              className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer ${
+                activeScreen === 'nhiem-vu-tuan'
+                  ? 'text-primary font-bold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <div
+                className={`p-1 rounded-full transition-all ${
+                  activeScreen === 'nhiem-vu-tuan' ? 'bg-primary-fixed text-on-primary-fixed scale-110 shadow-sm' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">calendar_month</span>
+              </div>
+              <span className="text-[11px] font-label-sm mt-0.5 whitespace-nowrap">Nhiệm vụ</span>
+            </button>
+
+            {/* Tab 4: Hồ sơ */}
+            <button
+              onClick={() => setActiveScreen('ho-so')}
+              className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer ${
+                activeScreen === 'ho-so'
+                  ? 'text-primary font-bold'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <div
+                className={`p-1 rounded-full transition-all ${
+                  activeScreen === 'ho-so' ? 'bg-primary-fixed text-on-primary-fixed scale-110 shadow-sm' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">person</span>
+              </div>
+              <span className="text-[11px] font-label-sm mt-0.5 whitespace-nowrap">Hồ sơ</span>
+            </button>
+          </div>
+        </nav>
+      )}
+
       {/* Standard Footer for Hub Screens */}
       {!isImmersiveGameScreen && (
-        <footer className="w-full bg-surface-container-low py-space-lg">
-          <div className="w-full px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm text-center md:text-left">
+        <footer className="w-full bg-surface-container-low py-space-lg mb-20 lg:mb-0">
+          <div className="w-full px-4 sm:px-6 md:px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm text-center md:text-left">
             <div className="flex items-center gap-space-sm">
               <span className="font-label-md text-label-md text-primary font-bold">
                 Potabi Biology

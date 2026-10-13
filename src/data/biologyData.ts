@@ -1,5 +1,5 @@
 export const IMAGES = {
-  potabiAvatar: '/potabi-yellow.svg',
+  potabiAvatar: '/potabi-blue.svg',
   potabiBlueAvatar: '/potabi-blue.svg',
   mapBg:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuC3kHFNTAVlydnTL6Q8iueM7V9-m2c3mpOxiATDYxDGk_PXFo4NnERyt-Bzy6cWXjVhEANUTdX4Ew_fNqSwztATpzT4Iku7DB9QzY3eyx740WFNI3lLUd09Se38XOfWeWZaCaIniHU3QcqzRmaC63X1GV8JEH4DEubD4W9TjAiC1-QV1awFfw19jknJjaTzmfNadIX3m4vDHDTOaLhnXMY5MW9XPE03QgdG9--GoCSDsJtaP5IM33_z',
@@ -57,7 +57,7 @@ export const STAGES: Record<string, StageInfo> = {
     specimensCount: 4,
     thumbnail: IMAGES.stomachStageBg,
     unlocked: true,
-    progress: 75,
+    progress: 100,
     theoryNotes: {
       heading: 'Tiêu Hóa Ở Khoang Miệng & Dạ Dày (Sinh học 8)',
       points: [
@@ -85,9 +85,10 @@ export const STAGES: Record<string, StageInfo> = {
     quizzesCount: 3,
     specimensCount: 1,
     thumbnail: IMAGES.heartThumbnail,
-    unlocked: false,
+    unlocked: true,
+    progress: 100,
     requiredStageId: 'tieu-hoa',
-    newlyUnlocked: true,
+    newlyUnlocked: false,
     theoryNotes: {
       heading: 'Cấu tạo Tim & Vòng Tuần Hoàn Kép (Sinh học 8)',
       points: [
@@ -115,7 +116,8 @@ export const STAGES: Record<string, StageInfo> = {
     quizzesCount: 3,
     specimensCount: 1,
     thumbnail: IMAGES.cutsceneToastBg,
-    unlocked: false,
+    unlocked: true,
+    progress: 100,
     requiredStageId: 'tuan-hoan',
     theoryNotes: {
       heading: 'Sự Khuếch Tán Khí tại Phế Nang & Tế Bào (Sinh học 8)',
@@ -138,13 +140,14 @@ export const STAGES: Record<string, StageInfo> = {
     difficulty: 'Độ khó: Khó',
     duration: '20 phút',
     caption: 'Cung phản xạ & Synapse thần kinh',
-    goal: 'Mở khóa ở Cấp độ 15 (sau khi hoàn thành Màn 3) để khám phá cách nơ-ron truyền tín hiệu điện hóa.',
+    goal: 'Khám phá cách nơ-ron truyền tín hiệu điện hóa và cung phản xạ 5 thành phần.',
     exp: 400,
     diamonds: 35,
     quizzesCount: 5,
     specimensCount: 2,
     thumbnail: IMAGES.mapBg,
-    unlocked: false,
+    unlocked: true,
+    progress: 100,
     requiredStageId: 'ho-hap',
     requiredLevel: 15,
     theoryNotes: {
@@ -166,13 +169,14 @@ export const STAGES: Record<string, StageInfo> = {
     difficulty: 'Độ khó: Khó',
     duration: '18 phút',
     caption: 'Cấu trúc Xương xốp & Sự co cơ vân',
-    goal: 'Mở khóa ở Cấp độ 18 để tìm hiểu sự phối hợp giữa xương, khớp và bắp cơ.',
+    goal: 'Tìm hiểu sự phối hợp giữa xương, sụn tăng trưởng, khớp và bắp cơ.',
     exp: 450,
     diamonds: 40,
     quizzesCount: 4,
     specimensCount: 2,
     thumbnail: IMAGES.mapBg,
-    unlocked: false,
+    unlocked: true,
+    progress: 100,
     requiredStageId: 'than-kinh',
     requiredLevel: 18,
     theoryNotes: {
@@ -246,7 +250,7 @@ export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
     id: 'pepsin',
     title: 'Enzym Pepsin & Axit HCl',
     category: 'Enzym & Hoạt Chất',
-    unlocked: false,
+    unlocked: true,
     specimenKey: 'tram-2',
     summary: 'Cặp đôi dịch vị dạ dày giúp cắt nhỏ chuỗi protein dài thành các chuỗi ngắn 3 - 10 axit amin.',
     detail:
@@ -256,7 +260,7 @@ export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
     id: 'co-da-day',
     title: 'Ba Lớp Cơ Trơn Thành Dạ Dày',
     category: 'Hệ Cơ Quan',
-    unlocked: false,
+    unlocked: true,
     specimenKey: 'tram-1',
     summary: 'Gồm cơ dọc (ngoài), cơ vòng (giữa) và cơ chéo (trong) tạo lực co bóp cực khỏe.',
     detail:
@@ -266,7 +270,7 @@ export const NOTEBOOK_ENTRIES: NotebookEntry[] = [
     id: 'chat-nhay-mucin',
     title: 'Màng Chất Nhầy Mucin Niêm Mạc',
     category: 'Enzym & Hoạt Chất',
-    unlocked: false,
+    unlocked: true,
     specimenKey: 'tram-3',
     summary: 'Lớp chất nhầy kiềm tính phủ kín niêm mạc giúp dạ dày không bị tự tiêu hủy.',
     detail:
@@ -327,7 +331,7 @@ export const OUTFITS: OutfitItem[] = [
     description: 'Thấu kính sinh học lấy cảm hứng từ tế bào thực vật giúp nhận diện nhanh cấu trúc cơ quan.',
     rarity: 'Vàng',
     priceDiamonds: 150,
-    owned: false,
+    owned: true,
     badgeIcon: 'biotech',
     accentColor: '#059669',
   },

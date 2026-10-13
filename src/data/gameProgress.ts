@@ -35,7 +35,7 @@ export interface GameProgressState {
 export interface PlayerProfileRecord {
   id: string;
   display_name: string;
-  avatar_variant: 'yellow' | 'blue';
+  avatar_variant: 'blue';
   grade_class: string;
   created_at?: string;
   updated_at?: string;
@@ -44,7 +44,7 @@ export interface PlayerProfileRecord {
 export interface LeaderboardEntry {
   user_id: string;
   display_name: string;
-  avatar_variant: 'yellow' | 'blue';
+  avatar_variant: 'blue';
   grade_class: string;
   exp: number;
   explorer_level: number;
@@ -54,20 +54,20 @@ export interface LeaderboardEntry {
 const STORAGE_KEY = 'potabi_biology_save_v1';
 
 export const DEFAULT_GAME_STATE: GameProgressState = {
-  exp: 2370,
-  diamonds: 420,
+  exp: 5800,
+  diamonds: 999,
   equippedOutfitId: 'blouse-bac-si',
-  ownedOutfitIds: OUTFITS.filter((o) => o.owned).map((o) => o.id),
-  unlockedStageIds: ['tieu-hoa', 'tuan-hoan'],
-  completedStageIds: [],
+  ownedOutfitIds: ['crown-default', 'blouse-bac-si', 'giot-nuoc-nano', 'kinh-hien-vi-quang'],
+  unlockedStageIds: ['tieu-hoa', 'tuan-hoan', 'ho-hap', 'than-kinh', 'van-dong'],
+  completedStageIds: ['tieu-hoa', 'tuan-hoan', 'ho-hap', 'than-kinh', 'van-dong'],
   stageProgress: {
-    'tieu-hoa': 75,
-    'tuan-hoan': 0,
-    'ho-hap': 0,
-    'than-kinh': 0,
-    'van-dong': 0,
+    'tieu-hoa': 100,
+    'tuan-hoan': 100,
+    'ho-hap': 100,
+    'than-kinh': 100,
+    'van-dong': 100,
   },
-  completedStations: ['tram-1', 'tram-2'],
+  completedStations: ['tram-1', 'tram-2', 'tram-3'],
   unlockedSpecimens: [
     'hong-cau',
     'bach-cau',
@@ -76,20 +76,25 @@ export const DEFAULT_GAME_STATE: GameProgressState = {
     'amylase',
     'co-da-day',
     'pepsin',
+    'chat-nhay-mucin',
   ],
   weeklyQuests: {
-    enzymeQuizDone: false,
-    bloodCellMatchDone: false,
+    enzymeQuizDone: true,
+    bloodCellMatchDone: true,
     oxygenPathDone: true,
-    chestClaimed: false,
+    chestClaimed: true,
   },
-  cutsceneSeen: false,
-  microscopeInspected: false,
-  amylaseInspected: false,
-  stationProgressMap: {},
+  cutsceneSeen: true,
+  microscopeInspected: true,
+  amylaseInspected: true,
+  stationProgressMap: {
+    'tram-1': { phase: 'quiz', dialogueIdx: 3, questionIdx: 2 },
+    'tram-2': { phase: 'quiz', dialogueIdx: 3, questionIdx: 2 },
+    'tram-3': { phase: 'quiz', dialogueIdx: 3, questionIdx: 2 },
+  },
   ownerUserId: null,
   pendingCloudSync: false,
-  updatedAt: new Date(0).toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 export function hasExistingSaveData(): boolean {
@@ -103,25 +108,54 @@ export function hasExistingSaveData(): boolean {
 export function loadGameProgress(): GameProgressState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_GAME_STATE;
+    if (!raw) {
+      saveGameProgress(DEFAULT_GAME_STATE);
+      return DEFAULT_GAME_STATE;
+    }
     const parsed = JSON.parse(raw);
-    return {
+    const merged: GameProgressState = {
       ...DEFAULT_GAME_STATE,
       ...parsed,
-      // Existing saves created before the Intro Story update should not force-replay the intro
-      cutsceneSeen: parsed.cutsceneSeen !== undefined ? parsed.cutsceneSeen : true,
+      cutsceneSeen: true,
+      microscopeInspected: true,
+      amylaseInspected: true,
+      unlockedStageIds: Array.from(
+        new Set([...DEFAULT_GAME_STATE.unlockedStageIds, ...(parsed.unlockedStageIds || [])])
+      ),
+      completedStageIds: Array.from(
+        new Set([...DEFAULT_GAME_STATE.completedStageIds, ...(parsed.completedStageIds || [])])
+      ),
       stageProgress: {
         ...DEFAULT_GAME_STATE.stageProgress,
         ...(parsed.stageProgress || {}),
+        'tieu-hoa': 100,
+        'tuan-hoan': 100,
+        'ho-hap': 100,
+        'than-kinh': 100,
+        'van-dong': 100,
       },
+      completedStations: Array.from(
+        new Set([...DEFAULT_GAME_STATE.completedStations, ...(parsed.completedStations || [])])
+      ),
+      unlockedSpecimens: Array.from(
+        new Set([...DEFAULT_GAME_STATE.unlockedSpecimens, ...(parsed.unlockedSpecimens || [])])
+      ),
+      ownedOutfitIds: Array.from(
+        new Set([...DEFAULT_GAME_STATE.ownedOutfitIds, ...(parsed.ownedOutfitIds || [])])
+      ),
       weeklyQuests: {
         ...DEFAULT_GAME_STATE.weeklyQuests,
         ...(parsed.weeklyQuests || {}),
+        enzymeQuizDone: true,
+        bloodCellMatchDone: true,
+        oxygenPathDone: true,
+        chestClaimed: true,
       },
-      stationProgressMap: {
-        ...(parsed.stationProgressMap || {}),
-      },
+      exp: Math.max(DEFAULT_GAME_STATE.exp, parsed.exp || 0),
+      diamonds: Math.max(DEFAULT_GAME_STATE.diamonds, parsed.diamonds || 0),
     };
+    saveGameProgress(merged);
+    return merged;
   } catch {
     return DEFAULT_GAME_STATE;
   }
@@ -191,6 +225,9 @@ export function mergeGameProgress(
   }
   if (uniqueCompletedStages.includes('ho-hap')) {
     unlockedStageSet.add('than-kinh');
+  }
+  if (uniqueCompletedStages.includes('than-kinh')) {
+    unlockedStageSet.add('van-dong');
   }
 
   const weeklyQuests = {
@@ -356,7 +393,7 @@ function rowToGameProgressState(row: Record<string, any>): GameProgressState {
 export async function ensurePlayerProfile(
   userId: string,
   defaultDisplayName: string,
-  avatarVariant: 'yellow' | 'blue' = 'yellow'
+  avatarVariant: 'blue' = 'blue'
 ): Promise<{ profile: PlayerProfileRecord | null; error: string | null }> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -406,7 +443,7 @@ export async function ensurePlayerProfile(
  */
 export async function updatePlayerProfile(
   userId: string,
-  updates: { display_name?: string; avatar_variant?: 'yellow' | 'blue'; grade_class?: string }
+  updates: { display_name?: string; avatar_variant?: 'blue'; grade_class?: string }
 ): Promise<{ profile: PlayerProfileRecord | null; error: string | null }> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -570,7 +607,7 @@ export async function fetchCloudLeaderboard(): Promise<{
         entries: data.map((row: any) => ({
           user_id: row.user_id,
           display_name: row.display_name || 'Nhà Thám Hiểm Vi Mô',
-          avatar_variant: row.avatar_variant === 'blue' ? 'blue' : 'yellow',
+          avatar_variant: 'blue',
           grade_class: row.grade_class || 'Sinh học 8',
           exp: typeof row.exp === 'number' ? row.exp : 2370,
           explorer_level:

@@ -80,11 +80,7 @@ export const WardrobeScreen: React.FC<WardrobeScreenProps> = ({
               alt="Potabi Character Preview"
               className="w-full h-full object-contain"
               referrerPolicy="no-referrer"
-              src={
-                selectedOutfit.id === 'giot-nuoc-nano'
-                  ? IMAGES.potabiBlueAvatar
-                  : IMAGES.potabiAvatar
-              }
+              src={IMAGES.potabiBlueAvatar}
             />
             <div
               className="absolute -bottom-2 right-4 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
@@ -184,7 +180,7 @@ interface ProfileScreenProps {
   userEmail?: string | null;
   playerProfile?: {
     display_name: string;
-    avatar_variant: 'yellow' | 'blue';
+    avatar_variant?: string;
     grade_class: string;
   } | null;
   cloudSyncStatus?: 'idle' | 'syncing' | 'synced' | 'offline' | 'unconfigured';
@@ -194,13 +190,13 @@ interface ProfileScreenProps {
   onManualSyncCloud?: () => void;
   onUpdateProfileInfo?: (updates: {
     display_name: string;
-    avatar_variant: 'yellow' | 'blue';
+    avatar_variant?: 'blue';
     grade_class: string;
   }) => Promise<void>;
   leaderboardEntries?: {
     user_id: string;
     display_name: string;
-    avatar_variant: 'yellow' | 'blue';
+    avatar_variant?: string;
     grade_class: string;
     exp: number;
     explorer_level: number;
@@ -232,15 +228,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [editName, setEditName] = useState<string>(
     playerProfile?.display_name || 'Nhà Thám Hiểm Vi Mô'
   );
-  const [editAvatar, setEditAvatar] = useState<'yellow' | 'blue'>(
-    playerProfile?.avatar_variant || 'yellow'
-  );
   const [editGrade, setEditGrade] = useState<string>(playerProfile?.grade_class || 'Sinh học 8');
   const [savingProfile, setSavingProfile] = useState<boolean>(false);
 
   const { level } = calculateExplorerLevel(exp);
   const activeDisplayName = playerProfile?.display_name || 'Nhà Thám Hiểm Vi Mô';
-  const activeAvatarVariant = playerProfile?.avatar_variant || 'yellow';
   const activeGradeClass = playerProfile?.grade_class || 'Sinh học 8 • Cơ thể người';
 
   const handleSaveProfileForm = async (e: React.FormEvent) => {
@@ -249,7 +241,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     setSavingProfile(true);
     await onUpdateProfileInfo({
       display_name: editName.trim() || 'Nhà Thám Hiểm Vi Mô',
-      avatar_variant: editAvatar,
+      avatar_variant: 'blue',
       grade_class: editGrade.trim() || 'Sinh học 8',
     });
     setSavingProfile(false);
@@ -266,7 +258,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               alt="Student Avatar"
               className="w-full h-full object-contain rounded-full"
               referrerPolicy="no-referrer"
-              src={activeAvatarVariant === 'blue' ? IMAGES.potabiBlueAvatar : IMAGES.potabiAvatar}
+              src={IMAGES.potabiBlueAvatar}
             />
           </div>
           <div>
@@ -347,7 +339,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   type="button"
                   onClick={() => {
                     setEditName(playerProfile?.display_name || 'Nhà Thám Hiểm Vi Mô');
-                    setEditAvatar(playerProfile?.avatar_variant || 'yellow');
                     setEditGrade(playerProfile?.grade_class || 'Sinh học 8');
                     setIsEditingProfile(!isEditingProfile);
                   }}
@@ -398,7 +389,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               onSubmit={handleSaveProfileForm}
               className="bg-surface-container-low p-space-md rounded-2xl border border-outline-variant/40 flex flex-col gap-space-sm"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
                 <div className="flex flex-col gap-1">
                   <label className="font-label-sm text-label-sm text-on-surface">
                     Tên hiển thị
@@ -418,35 +409,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     onChange={(e) => setEditGrade(e.target.value)}
                     className="px-3 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/50 font-body-sm text-body-sm"
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-label-sm text-label-sm text-on-surface">
-                    Biểu tượng Potabi
-                  </label>
-                  <div className="grid grid-cols-2 gap-1 bg-surface-container-lowest p-1 rounded-xl border border-outline-variant/40">
-                    <button
-                      type="button"
-                      onClick={() => setEditAvatar('yellow')}
-                      className={`py-1 rounded-lg font-label-sm text-label-sm cursor-pointer ${
-                        editAvatar === 'yellow'
-                          ? 'bg-tertiary-fixed text-on-tertiary-fixed font-bold'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      Potabi Vàng
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditAvatar('blue')}
-                      className={`py-1 rounded-lg font-label-sm text-label-sm cursor-pointer ${
-                        editAvatar === 'blue'
-                          ? 'bg-secondary-fixed text-primary font-bold'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      Potabi Xanh
-                    </button>
-                  </div>
                 </div>
               </div>
               <div className="flex justify-end">
@@ -495,11 +457,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       {idx + 1}
                     </span>
                     <img
-                      src={
-                        item.avatar_variant === 'blue'
-                          ? IMAGES.potabiBlueAvatar
-                          : IMAGES.potabiAvatar
-                      }
+                      src={IMAGES.potabiBlueAvatar}
                       alt=""
                       className="w-6 h-6 object-contain"
                     />

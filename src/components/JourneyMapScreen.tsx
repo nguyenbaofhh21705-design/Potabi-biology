@@ -88,6 +88,78 @@ const RESPIRATORY_QUIZ = [
   },
 ];
 
+const NERVOUS_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 43): Đơn vị cấu tạo và chức năng cơ bản của hệ thần kinh người là gì?',
+    options: [
+      'A. Tế bào Nơ-ron gồm thân chứa nhân, sợi nhánh và một sợi trục',
+      'B. Tế bào cơ trơn có khả năng co rút tự động',
+      'C. Tế bào biểu bì màng nhầy',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Tế bào có bao Myelin bao bọc và các eo Ranvier dẫn truyền xung điện cực nhanh.',
+    explanation: 'Chính xác! Nơ-ron là đơn vị cấu tạo của hệ thần kinh, có chức năng cảm ứng và dẫn truyền xung thần kinh.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 6): Một cung phản xạ hoàn chỉnh gồm bao nhiêu thành phần theo thứ tự?',
+    options: [
+      'A. 3 thành phần: Cơ quan thụ cảm → Não bộ → Cơ quan phản ứng',
+      'B. 5 thành phần: Cơ quan thụ cảm → Nơ-ron hướng tâm → Nơ-ron trung gian → Nơ-ron li tâm → Cơ quan phản ứng',
+      'C. 2 thành phần: Dây thần kinh và Bắp cơ',
+    ],
+    correct: 1,
+    hint: 'Gợi ý: Xung thần kinh đi từ thụ cảm qua hướng tâm vào trung ương rồi theo li tâm ra cơ quan thực hiện.',
+    explanation: 'Hoàn toàn chính xác! Cung phản xạ gồm đủ 5 mắt xích dẫn truyền xung thần kinh khép kín.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 44): Vỏ não người có các vùng cảm giác và vận động, cùng các vùng chức năng bậc cao chỉ có ở người là?',
+    options: [
+      'A. Vùng hiểu tiếng nói và vùng hiểu chữ viết',
+      'B. Vùng thị giác và vùng thính giác',
+      'C. Vùng vận động ăn uống',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Vùng chức năng liên quan đến ngôn ngữ, tư duy trừu tượng và chữ viết.',
+    explanation: 'Xuất sắc! Vùng vận động ngôn ngữ, hiểu tiếng nói và hiểu chữ viết là đặc trưng tiến hóa chỉ có ở con người.',
+  },
+];
+
+const MUSCULOSKELETAL_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 9): Xương dài của người phát triển to ra về bề ngang và dài ra về chiều dài nhờ cơ chế nào?',
+    options: [
+      'A. To ra nhờ tế bào màng xương phân chia; Dài ra nhờ sự phân chia tế bào sụn tăng trưởng',
+      'B. To ra nhờ tủy đỏ; Dài ra nhờ bao khớp',
+      'C. Xương chỉ to ra chứ không thể dài thêm sau khi sinh',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Màng xương ở ngoài cùng phân chia tạo lớp xương mới; sụn đầu xương hóa xương để tăng chiều cao.',
+    explanation: 'Chính xác! Tế bào màng xương giúp xương dày lên, còn lớp sụn tăng trưởng ở hai đầu xương giúp xương dài ra.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 9): Thành phần hóa học nào giúp xương người vừa có tính mềm dẻo đàn hồi, vừa có tính bền chắc chịu lực?',
+    options: [
+      'A. Chất hữu cơ (cốt giao) tạo tính mềm dẻo; Chất vô cơ (muối Canxi, Photpho) tạo tính bền chắc',
+      'B. 100% là tinh thể Canxi nguyên chất',
+      'C. Chỉ có chất béo và dịch tủy xương',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Tỉ lệ cốt giao và muối khoáng thay đổi theo độ tuổi (người trẻ xương dẻo dai hơn người già).',
+    explanation: 'Rất chính xác! Sự kết hợp hoàn hảo giữa chất hữu cơ dẻo dai và muối khoáng cứng cáp giúp xương chịu được lực nén lớn.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 11): Khi bắp cơ co, tơ cơ mảnh trượt sâu vào vùng tơ cơ dày làm bắp cơ ngắn lại và phình to là nhờ năng lượng từ đâu?',
+    options: [
+      'A. Năng lượng ATP sinh ra từ quá trình oxy hóa chất dinh dưỡng (hô hấp tế bào)',
+      'B. Chỉ nhờ dòng máu đẩy trực tiếp vào tế bào cơ',
+      'C. Do áp suất không khí bên ngoài ép vào',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Đồng tiền năng lượng của tế bào được ty thể tổng hợp liên tục.',
+    explanation: 'Tuyệt vời! ATP cung cấp năng lượng cho các cầu nối Actomyosin trượt lên nhau, tạo nên lực co cơ kỳ diệu.',
+  },
+];
+
 export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
   onPlayCutscene,
   onPlayStage2D,
@@ -142,7 +214,12 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
 
     if (selectedStageId === 'tieu-hoa') {
       onPlayCutscene();
-    } else if (selectedStageId === 'tuan-hoan' || selectedStageId === 'ho-hap') {
+    } else if (
+      selectedStageId === 'tuan-hoan' ||
+      selectedStageId === 'ho-hap' ||
+      selectedStageId === 'than-kinh' ||
+      selectedStageId === 'van-dong'
+    ) {
       setActiveQuizStageId(selectedStageId);
       setQuizStep(0);
       setSelectedOpt(null);
@@ -153,7 +230,13 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
   };
 
   const activeQuizData =
-    activeQuizStageId === 'ho-hap' ? RESPIRATORY_QUIZ : CIRCULATORY_QUIZ;
+    activeQuizStageId === 'ho-hap'
+      ? RESPIRATORY_QUIZ
+      : activeQuizStageId === 'than-kinh'
+      ? NERVOUS_QUIZ
+      : activeQuizStageId === 'van-dong'
+      ? MUSCULOSKELETAL_QUIZ
+      : CIRCULATORY_QUIZ;
 
   const handleNextQuizQuestion = () => {
     if (!activeQuizStageId) return;
@@ -308,7 +391,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                     alt="Potabi"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
-                    src={IMAGES.potabiAvatar}
+                    src={IMAGES.potabiBlueAvatar}
                   />
                 </div>
               </div>
@@ -380,26 +463,50 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 }`}
               >
                 <div className="relative flex items-center justify-center">
-                  <div
-                    className={`w-[72px] h-[72px] rounded-full bg-surface-container-high flex items-center justify-center shadow-md opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all ${
-                      selectedStageId === 'ho-hap' ? 'ring-4 ring-tertiary-fixed' : ''
+                  <span
+                    className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                      completedStageIds.includes('ho-hap')
+                        ? 'bg-emerald-500 text-white'
+                        : unlockedStageIds.includes('ho-hap')
+                        ? 'bg-sky-400 text-on-tertiary-fixed'
+                        : 'bg-surface-dim text-on-surface'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-primary text-2xl">
-                      {unlockedStageIds.includes('ho-hap') ? 'air' : 'lock'}
-                    </span>
+                    <span className="material-symbols-outlined text-sm">
+                      {completedStageIds.includes('ho-hap')
+                        ? 'verified'
+                        : unlockedStageIds.includes('ho-hap')
+                        ? 'lock_open'
+                        : 'lock'}
+                    </span>{' '}
+                    {completedStageIds.includes('ho-hap')
+                      ? 'ĐÃ HOÀN THÀNH'
+                      : unlockedStageIds.includes('ho-hap')
+                      ? 'MỚI MỞ KHÓA'
+                      : 'Đang khóa'}
+                  </span>
+                  <div
+                    className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                      unlockedStageIds.includes('ho-hap')
+                        ? 'bg-gradient-to-tr from-sky-500 to-cyan-300 ring-4 ring-sky-300/60 text-white'
+                        : 'bg-surface-container-high text-primary opacity-90'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-3xl">air</span>
                   </div>
-                  <div className="absolute -bottom-1 -right-2 bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">
+                  <div className="absolute -bottom-1 -right-2 bg-primary-fixed-dim text-on-primary-fixed px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm">
                     Màn 3
                   </div>
                 </div>
                 <div
-                  className={`mt-2 text-center bg-inverse-surface/80 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                  className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
                     selectedStageId === 'ho-hap' ? 'border-tertiary-fixed' : 'border-transparent'
                   }`}
                 >
-                  <p className="font-label-md text-label-md text-inverse-on-surface">Hệ Hô Hấp</p>
-                  <p className="font-label-sm text-label-sm text-secondary-fixed-dim">
+                  <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
+                    Hệ Hô Hấp
+                  </p>
+                  <p className="font-label-sm text-label-sm text-secondary-fixed">
                     Phế Nang &amp; Oxy
                   </p>
                 </div>
@@ -407,53 +514,131 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             )}
 
             {/* Stage 4: Hệ Thần Kinh */}
-            {!filterUnlockedOnly && (
+            {(!filterUnlockedOnly || unlockedStageIds.includes('than-kinh')) && (
               <div
                 onClick={() => {
                   setLockNotice(null);
                   setSelectedStageId('than-kinh');
                 }}
-                className="absolute left-[70%] top-[40%] flex flex-col items-center opacity-75 hover:opacity-95 cursor-pointer transition-opacity"
+                className={`absolute left-[70%] top-[40%] flex flex-col items-center group cursor-pointer transition-transform ${
+                  selectedStageId === 'than-kinh' ? 'scale-105' : ''
+                }`}
               >
                 <div className="relative flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center shadow-sm">
-                    <span className="material-symbols-outlined text-outline text-2xl">lock</span>
-                  </div>
-                  <span className="absolute -top-3 px-2 py-0.5 bg-surface-dim rounded-full text-on-surface font-label-sm text-label-sm">
-                    Cấp 15
+                  <span
+                    className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                      completedStageIds.includes('than-kinh')
+                        ? 'bg-emerald-500 text-white'
+                        : unlockedStageIds.includes('than-kinh')
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-surface-dim text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {completedStageIds.includes('than-kinh')
+                        ? 'verified'
+                        : unlockedStageIds.includes('than-kinh')
+                        ? 'lock_open'
+                        : 'lock'}
+                    </span>{' '}
+                    {completedStageIds.includes('than-kinh')
+                      ? 'ĐÃ HOÀN THÀNH'
+                      : unlockedStageIds.includes('than-kinh')
+                      ? 'MỚI MỞ KHÓA'
+                      : 'Cấp 15'}
                   </span>
+                  <div
+                    className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                      unlockedStageIds.includes('than-kinh')
+                        ? 'bg-gradient-to-tr from-indigo-600 to-purple-400 ring-4 ring-indigo-300/60 text-white'
+                        : 'bg-surface-container-highest text-outline'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-3xl">
+                      {unlockedStageIds.includes('than-kinh') ? 'psychology' : 'lock'}
+                    </span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-2 bg-primary-fixed-dim text-on-primary-fixed px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm">
+                    Màn 4
+                  </div>
                 </div>
-                <div className="mt-2 text-center bg-inverse-surface/75 px-3 py-1 rounded-xl">
-                  <p className="font-label-md text-label-md text-outline-variant">
+                <div
+                  className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                    selectedStageId === 'than-kinh'
+                      ? 'border-tertiary-fixed'
+                      : 'border-transparent'
+                  }`}
+                >
+                  <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
                     Màn 4: Hệ Thần Kinh
                   </p>
-                  <p className="font-label-sm text-label-sm text-outline">Xung Điện Não Bộ</p>
+                  <p className="font-label-sm text-label-sm text-secondary-fixed">
+                    Xung Điện Não Bộ
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Stage 5: Hệ Vận Động */}
-            {!filterUnlockedOnly && (
+            {(!filterUnlockedOnly || unlockedStageIds.includes('van-dong')) && (
               <div
                 onClick={() => {
                   setLockNotice(null);
                   setSelectedStageId('van-dong');
                 }}
-                className="absolute left-[84%] bottom-[24%] flex flex-col items-center opacity-65 hover:opacity-90 cursor-pointer transition-opacity"
+                className={`absolute left-[84%] bottom-[24%] flex flex-col items-center group cursor-pointer transition-transform ${
+                  selectedStageId === 'van-dong' ? 'scale-105' : ''
+                }`}
               >
                 <div className="relative flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center shadow-sm">
-                    <span className="material-symbols-outlined text-outline text-2xl">lock</span>
-                  </div>
-                  <span className="absolute -top-3 px-2 py-0.5 bg-surface-dim rounded-full text-on-surface font-label-sm text-label-sm">
-                    Cấp 18
+                  <span
+                    className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                      completedStageIds.includes('van-dong')
+                        ? 'bg-emerald-500 text-white'
+                        : unlockedStageIds.includes('van-dong')
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-surface-dim text-on-surface'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {completedStageIds.includes('van-dong')
+                        ? 'verified'
+                        : unlockedStageIds.includes('van-dong')
+                        ? 'lock_open'
+                        : 'lock'}
+                    </span>{' '}
+                    {completedStageIds.includes('van-dong')
+                      ? 'ĐÃ HOÀN THÀNH'
+                      : unlockedStageIds.includes('van-dong')
+                      ? 'MỚI MỞ KHÓA'
+                      : 'Cấp 18'}
                   </span>
+                  <div
+                    className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                      unlockedStageIds.includes('van-dong')
+                        ? 'bg-gradient-to-tr from-amber-500 to-rose-400 ring-4 ring-amber-300/60 text-white'
+                        : 'bg-surface-container-highest text-outline'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-3xl">
+                      {unlockedStageIds.includes('van-dong') ? 'accessibility_new' : 'lock'}
+                    </span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-2 bg-primary-fixed-dim text-on-primary-fixed px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm">
+                    Màn 5
+                  </div>
                 </div>
-                <div className="mt-2 text-center bg-inverse-surface/75 px-3 py-1 rounded-xl">
-                  <p className="font-label-md text-label-md text-outline-variant">
+                <div
+                  className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                    selectedStageId === 'van-dong' ? 'border-tertiary-fixed' : 'border-transparent'
+                  }`}
+                >
+                  <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
                     Màn 5: Hệ Vận Động
                   </p>
-                  <p className="font-label-sm text-label-sm text-outline">Khung Xương &amp; Cơ</p>
+                  <p className="font-label-sm text-label-sm text-secondary-fixed">
+                    Khung Xương &amp; Cơ
+                  </p>
                 </div>
               </div>
             )}
@@ -466,7 +651,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 alt="Potabi Mascot"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
-                src={IMAGES.potabiAvatar}
+                src={IMAGES.potabiBlueAvatar}
               />
             </div>
             <div className="flex flex-col pr-1">

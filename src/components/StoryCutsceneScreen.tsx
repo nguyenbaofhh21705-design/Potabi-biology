@@ -37,7 +37,7 @@ const INTRO_SCENES: IntroSceneConfig[] = [
       background:
         'radial-gradient(circle at 46% 38%, rgba(249, 188, 78, 0.28) 0%, rgba(74, 36, 51, 0.45) 68%, rgba(49, 16, 30, 0.85) 100%)',
     },
-    potabiSprite: IMAGES.potabiAvatar,
+    potabiSprite: IMAGES.potabiBlueAvatar,
     potabiPositionClass: 'left-[44%] top-[34%] -rotate-3',
     potabiSizeClass: 'w-28 h-28',
     potabiBubbleIcon: 'wb_sunny',
@@ -113,7 +113,7 @@ const INTRO_SCENES: IntroSceneConfig[] = [
       background:
         'radial-gradient(circle at 50% 45%, rgba(162, 60, 91, 0.25) 0%, rgba(49, 16, 30, 0.72) 72%, rgba(35, 11, 22, 0.92) 100%)',
     },
-    potabiSprite: IMAGES.potabiAvatar,
+    potabiSprite: IMAGES.potabiBlueAvatar,
     potabiPositionClass: 'left-[26%] top-[42%] -rotate-3',
     potabiSizeClass: 'w-28 h-28',
     potabiBubbleIcon: 'auto_awesome',
@@ -138,7 +138,7 @@ const INTRO_SCENES: IntroSceneConfig[] = [
       background:
         'linear-gradient(180deg, rgba(49, 16, 30, 0.55) 0%, rgba(74, 36, 51, 0.35) 55%, rgba(49, 16, 30, 0.88) 100%)',
     },
-    potabiSprite: IMAGES.potabiAvatar,
+    potabiSprite: IMAGES.potabiBlueAvatar,
     potabiPositionClass: 'left-[22%] top-[45%] rotate-0',
     potabiSizeClass: 'w-32 h-32',
     potabiBubbleIcon: 'volunteer_activism',

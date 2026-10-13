@@ -250,7 +250,7 @@ export const WeeklyQuestsScreen: React.FC<WeeklyQuestsScreenProps> = ({
                     alt="Potabi Mascot"
                     className="w-20 h-20 rounded-full object-cover bg-surface-container p-1 shadow-inner"
                     referrerPolicy="no-referrer"
-                    src={IMAGES.potabiAvatar}
+                    src={IMAGES.potabiBlueAvatar}
                   />
                   <div className="absolute -bottom-1 -right-1 bg-tertiary text-on-tertiary w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow">
                     ★

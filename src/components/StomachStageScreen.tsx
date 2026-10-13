@@ -341,6 +341,117 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [showVictoryBanner, setShowVictoryBanner] = useState<boolean>(false);
 
+  // Pause Menu & Modal States
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [pauseTab, setPauseTab] = useState<'objectives' | 'settings' | 'controls'>('objectives');
+  const [showRestartConfirm, setShowRestartConfirm] = useState<boolean>(false);
+  const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+
+  // Transparent Auto-Fading HUD States
+  const [isHudExpanded, setIsHudExpanded] = useState<boolean>(true);
+  const [hudFading, setHudFading] = useState<boolean>(false);
+  const hudTimeoutRef = useRef<number | null>(null);
+
+  // In-Game Configurable Settings (Persisted in localStorage)
+  const [bgmEnabled, setBgmEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('potabi_bgm') !== 'false';
+  });
+  const [sfxEnabled, setSfxEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('potabi_sfx') !== 'false';
+  });
+  const [ambientEffects, setAmbientEffects] = useState<boolean>(() => {
+    return localStorage.getItem('potabi_ambient') !== 'false';
+  });
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
+    return localStorage.getItem('potabi_reduced_motion') === 'true';
+  });
+  const [virtualControls, setVirtualControls] = useState<boolean>(() => {
+    return localStorage.getItem('potabi_virtual_controls') !== 'false';
+  });
+
+  const handleToggleBgm = () => {
+    setBgmEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('potabi_bgm', String(next));
+      return next;
+    });
+  };
+
+  const handleToggleSfx = () => {
+    setSfxEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('potabi_sfx', String(next));
+      return next;
+    });
+  };
+
+  const handleToggleAmbient = () => {
+    setAmbientEffects((prev) => {
+      const next = !prev;
+      localStorage.setItem('potabi_ambient', String(next));
+      return next;
+    });
+  };
+
+  const handleToggleReducedMotion = () => {
+    setReducedMotion((prev) => {
+      const next = !prev;
+      localStorage.setItem('potabi_reduced_motion', String(next));
+      return next;
+    });
+  };
+
+  const handleToggleVirtualControls = () => {
+    setVirtualControls((prev) => {
+      const next = !prev;
+      localStorage.setItem('potabi_virtual_controls', String(next));
+      return next;
+    });
+  };
+
+  // Helper to schedule HUD auto-fade out
+  const scheduleHudFadeOut = (delayMs: number = 4000) => {
+    if (hudTimeoutRef.current) {
+      window.clearTimeout(hudTimeoutRef.current);
+    }
+    hudTimeoutRef.current = window.setTimeout(() => {
+      setHudFading(true);
+      hudTimeoutRef.current = window.setTimeout(() => {
+        setIsHudExpanded(false);
+        setHudFading(false);
+      }, 800);
+    }, delayMs);
+  };
+
+  // Initial HUD Auto-fade after 4 seconds on screen mount
+  useEffect(() => {
+    scheduleHudFadeOut(4000);
+    return () => {
+      if (hudTimeoutRef.current) {
+        window.clearTimeout(hudTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Re-open HUD handler
+  const handleOpenHud = () => {
+    if (hudTimeoutRef.current) {
+      window.clearTimeout(hudTimeoutRef.current);
+    }
+    setHudFading(false);
+    setIsHudExpanded(true);
+    scheduleHudFadeOut(5000);
+  };
+
+  // Close HUD manually
+  const handleCloseHud = () => {
+    if (hudTimeoutRef.current) {
+      window.clearTimeout(hudTimeoutRef.current);
+    }
+    setHudFading(false);
+    setIsHudExpanded(false);
+  };
+
   // Refs for smooth 60fps physics loop
   const posRef = useRef({ x: 17, y: 66 });
   const velRef = useRef({ vx: 0, vy: 0 });
@@ -372,6 +483,22 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
     keysRef.current.jumpQueued = false;
     velRef.current.vx = 0;
     velRef.current.vy = 0;
+  };
+
+  // Restart Stage to initial platform position
+  const handleRestartStage = () => {
+    stopPlayerMovementAndPhysics();
+    posRef.current = { x: 17, y: 66 };
+    setPlayerPos({ x: 17, y: 66 });
+    groundedRef.current = true;
+    setIsGrounded(true);
+    setCurrentPlatformLabel('Thềm Cơ Dọc & Cơ Vòng');
+    setHealth(100);
+    setAcidWarning(false);
+    setIsPaused(false);
+    setShowRestartConfirm(false);
+    // Briefly display HUD again so player has fresh orientation
+    handleOpenHud();
   };
 
   // Step 1: Open the Station Introduction Menu (does not immediately start station gameplay)
@@ -418,8 +545,9 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
     let animId: number;
 
     const updatePhysics = () => {
-      // Pause physics when any menu or modal is open
+      // Pause physics when game is paused or any menu or modal is open
       if (
+        isPaused ||
         introStation ||
         activeStation ||
         showPotabiModal ||
@@ -526,6 +654,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
     animId = requestAnimationFrame(updatePhysics);
     return () => cancelAnimationFrame(animId);
   }, [
+    isPaused,
     introStation,
     activeStation,
     showPotabiModal,
@@ -536,7 +665,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
     equippedOutfitId,
   ]);
 
-  // Keyboard Listeners using event.code (KeyA/ArrowLeft, KeyD/ArrowRight, KeyW/ArrowUp, KeyE)
+  // Keyboard Listeners using event.code (KeyA/ArrowLeft, KeyD/ArrowRight, KeyW/ArrowUp, KeyE, Escape, Tab)
   useEffect(() => {
     const isTypingInInput = (target: EventTarget | null): boolean => {
       if (!(target instanceof HTMLElement)) return false;
@@ -550,6 +679,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
     };
 
     const isModalOpen =
+      isPaused ||
       Boolean(introStation) ||
       Boolean(activeStation) ||
       showPotabiModal ||
@@ -572,15 +702,38 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
 
       if (e.code === 'Escape') {
         e.preventDefault();
+        if (showRestartConfirm) {
+          setShowRestartConfirm(false);
+          return;
+        }
+        if (showExitConfirm) {
+          setShowExitConfirm(false);
+          return;
+        }
         if (introStation) {
           setIntroStation(null);
-        } else if (activeStation) {
-          closeActiveStationGameplay();
-        } else if (showPotabiModal) {
-          setShowPotabiModal(false);
-        } else if (amylaseModalStep !== null) {
-          setAmylaseModalStep(null);
+          return;
         }
+        if (activeStation) {
+          closeActiveStationGameplay();
+          return;
+        }
+        if (showPotabiModal) {
+          setShowPotabiModal(false);
+          return;
+        }
+        if (amylaseModalStep !== null) {
+          setAmylaseModalStep(null);
+          return;
+        }
+        // Toggle Pause Menu on/off
+        setIsPaused((prev) => {
+          const next = !prev;
+          if (next) {
+            stopPlayerMovementAndPhysics();
+          }
+          return next;
+        });
         return;
       }
 
@@ -598,7 +751,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
         return;
       }
 
-      // Do not process character movement/interaction keys when a dialog/modal is open
+      // Do not process character movement/interaction keys when a dialog/modal/pause is open
       if (isModalOpen) {
         keysRef.current.KeyA = false;
         keysRef.current.ArrowLeft = false;
@@ -673,6 +826,9 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
       window.removeEventListener('blur', handleWindowBlur);
     };
   }, [
+    isPaused,
+    showRestartConfirm,
+    showExitConfirm,
     nearbyTarget,
     introStation,
     activeStation,
@@ -748,65 +904,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
 
   return (
     <div className="bg-inverse-surface font-body-md text-body-md text-inverse-on-surface overflow-hidden select-none relative w-full h-screen">
-      {/* Top & Bottom Outer Frame Matching Screen 3 (Image 5) */}
-      <div className="pointer-events-none fixed inset-0 z-40 p-margin flex flex-col justify-between">
-        <div className="flex items-start justify-between w-full pointer-events-auto">
-          <button
-            onClick={onExitToMap}
-            className="flex items-center gap-space-sm bg-inverse-surface/80 hover:bg-inverse-surface backdrop-blur-md px-space-md py-space-xs rounded-full transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-tertiary-fixed">eco</span>
-            <span className="font-label-md text-label-md text-inverse-on-surface">
-              Thế giới Vi mô
-            </span>
-          </button>
 
-          <div className="flex items-center gap-space-sm">
-            <div className="flex items-center gap-space-xs bg-inverse-surface/80 backdrop-blur-md px-space-md py-space-xs rounded-full">
-              <span className="material-symbols-outlined text-tertiary-fixed">flag</span>
-              <span className="font-label-sm text-label-sm text-inverse-on-surface">
-                Mục tiêu: Hoàn thành {completedStations.length}/3 Trạm Dạ Dày &amp; Soi tiêu bản
-              </span>
-            </div>
-            <button
-              onClick={onExitToMap}
-              title="Tạm dừng / Về bản đồ"
-              className="w-10 h-10 rounded-full bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface flex items-center justify-center hover:bg-inverse-surface transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined">pause</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Dock */}
-        <div className="flex justify-center w-full pointer-events-auto">
-          <div className="flex items-center gap-space-md bg-inverse-surface/80 backdrop-blur-md px-space-lg py-space-sm rounded-full shadow-xl">
-            <button
-              onClick={onOpenMicroscope}
-              className="flex items-center gap-space-xs font-label-md text-label-md text-inverse-on-surface hover:text-tertiary-fixed transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined">zoom_in</span>
-              <span>Phóng to kính</span>
-            </button>
-            <div className="w-px h-4 bg-outline/40"></div>
-            <button
-              onClick={onOpenStain}
-              className="flex items-center gap-space-xs font-label-md text-label-md text-inverse-on-surface hover:text-tertiary-fixed transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined">colorize</span>
-              <span>Nhuộm mẫu</span>
-            </button>
-            <div className="w-px h-4 bg-outline/40"></div>
-            <button
-              onClick={onOpenNotebook}
-              className="flex items-center gap-space-xs font-label-md text-label-md text-inverse-on-surface hover:text-tertiary-fixed transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined">menu_book</span>
-              <span>Sổ tay</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Main 2D Stage Canvas */}
       <main className="w-full h-full relative z-0">
@@ -998,11 +1096,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
                   alt="Potabi Mascot 2D Companion"
                   className="w-full h-full object-contain pointer-events-none"
                   referrerPolicy="no-referrer"
-                  src={
-                    acidWarning || equippedOutfitId === 'giot-nuoc-nano'
-                      ? IMAGES.potabiBlueAvatar
-                      : IMAGES.potabiAvatar
-                  }
+                  src={IMAGES.potabiBlueAvatar}
                 />
                 <div className="absolute -bottom-1 w-16 h-3 bg-inverse-surface/35 rounded-full blur-[2px]"></div>
               </div>
@@ -1037,222 +1131,779 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
             </div>
           </div>
 
-          {/* IN-GAME HUD OVERLAYS */}
-          <div className="absolute inset-0 pointer-events-none p-margin flex flex-col justify-between z-30">
-            {/* TOP HUD ROW */}
-            <div className="flex items-start justify-between w-full pointer-events-auto mt-12">
-              {/* Top-Left: Player & Potabi Status Panel */}
-              <div className="flex items-center gap-space-md bg-surface-container-lowest/90 backdrop-blur-md p-space-sm rounded-[2rem] shadow-xl max-w-md">
-                <div className="w-14 h-14 rounded-full bg-secondary-container p-1 flex-shrink-0 relative shadow-sm">
-                  <img
-                    alt="Potabi Avatar"
-                    className="w-full h-full object-contain rounded-full"
-                    referrerPolicy="no-referrer"
-                    src={IMAGES.potabiAvatar}
-                  />
-                  <span className="absolute bottom-0 right-0 w-4 h-4 bg-tertiary-fixed-dim rounded-full flex items-center justify-center text-[10px] font-bold text-on-tertiary-fixed">
-                    8
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0 pr-space-sm">
-                  <div className="flex items-center justify-between gap-space-sm mb-1">
-                    <span className="font-label-md text-label-md text-on-surface truncate">
-                      Nhà Thám Hiểm Sinh Học
-                    </span>
-                    <span className="font-label-sm text-label-sm text-primary">
-                      {currentPlatformLabel}
+          {/* UNIFIED STREAMLINED TOP HUD DOCK (Transparent, Auto-Fading, Compact) */}
+          <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-30 pointer-events-none flex items-start justify-between gap-2 safe-p-top">
+            {/* Top-Left: Return to Map & Health/pH Badge */}
+            <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+              <button
+                onClick={() => setShowExitConfirm(true)}
+                title="Trở về Bản Đồ Hành Trình"
+                className="h-10 px-3 bg-surface-container-lowest/90 hover:bg-surface-container backdrop-blur-md rounded-full shadow-md flex items-center gap-1.5 text-on-surface transition-colors cursor-pointer border border-primary/20 text-xs sm:text-sm font-label-sm font-bold"
+              >
+                <span className="material-symbols-outlined text-base sm:text-lg text-primary">eco</span>
+                <span className="hidden sm:inline">Bản đồ</span>
+              </button>
+
+              <div className="h-10 px-3 bg-surface-container-lowest/90 backdrop-blur-md rounded-full shadow-md flex items-center gap-2 border border-primary/20">
+                <div className="flex flex-col justify-center">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] sm:text-xs font-bold text-primary">pH 1.5 - 2.5</span>
+                    <span className="text-outline-variant text-[10px]">•</span>
+                    <span className="text-[10px] sm:text-xs text-on-surface-variant font-semibold">
+                      Sinh lực {health}%
                     </span>
                   </div>
-                  <div className="w-48 h-3.5 bg-secondary-fixed rounded-full overflow-hidden shadow-inner relative mb-1.5">
+                  <div className="w-16 sm:w-20 h-1.5 bg-secondary-fixed rounded-full overflow-hidden mt-0.5">
                     <div
-                      className="h-full bg-primary rounded-full relative transition-all duration-300"
+                      className="h-full bg-primary rounded-full transition-all duration-300"
                       style={{ width: `${health}%` }}
-                    >
-                      <div className="absolute top-0 inset-x-0 h-1 bg-surface-container-lowest/40 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-on-surface-variant truncate">
-                    <span className="material-symbols-outlined text-xs text-primary flex-shrink-0">
-                      task_alt
-                    </span>
-                    <span className="font-label-sm text-label-sm truncate">
-                      {completedStations.length >= 3
-                        ? 'Đã hoàn thành cả 3 Trạm Dạ dày! Sẵn sàng qua màn!'
-                        : 'Di chuyển tới 3 Trạm Dạ dày & Nhấn [E] để giải đố'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Top-Right: Biology Discovery Tracker & Live Player Radar */}
-              <div className="flex items-center gap-space-md">
-                <div className="bg-surface-container-lowest/90 backdrop-blur-md p-space-sm rounded-[2rem] shadow-xl flex items-center gap-space-md">
-                  <div className="flex flex-col pl-2">
-                    <div className="flex items-center gap-1 mb-1">
-                      <span className="material-symbols-outlined text-sm text-tertiary">
-                        biotech
-                      </span>
-                      <span className="font-label-sm text-label-sm text-on-surface font-bold">
-                        Mẫu vật: {Math.min(4, totalSpecimensCount)}/4
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      {[0, 1, 2, 3].map((i) => (
-                        <span
-                          key={i}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            i < totalSpecimensCount ? 'bg-primary' : 'bg-secondary-fixed'
-                          }`}
-                        ></span>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Live Minimap Radar showing Player dot & Station dots */}
-                  <div className="w-14 h-14 rounded-full bg-surface-container-high relative overflow-hidden flex items-center justify-center shadow-inner">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/10 to-transparent"></div>
-                    <div className="w-9 h-9 rounded-full border border-dashed border-outline-variant/60"></div>
-                    {/* Player Live Position Dot */}
-                    <div
-                      style={{
-                        left: `${Math.min(85, Math.max(15, playerPos.x))}%`,
-                        top: `${Math.min(85, Math.max(15, playerPos.y))}%`,
-                      }}
-                      className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-tertiary-fixed-dim ring-2 ring-white"
                     />
-                    <div className="absolute top-[58%] left-[22%] w-1.5 h-1.5 rounded-full bg-primary"></div>
-                    <div className="absolute top-[63%] left-[44%] w-1.5 h-1.5 rounded-full bg-primary"></div>
-                    <div className="absolute top-[72%] left-[82%] w-1.5 h-1.5 rounded-full bg-secondary"></div>
                   </div>
                 </div>
-
-                <button
-                  onClick={onExitToMap}
-                  className="h-14 px-space-md bg-surface-container-lowest/90 backdrop-blur-md rounded-[2rem] shadow-xl flex items-center gap-1.5 text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-xl">tune</span>
-                  <span className="font-label-sm text-label-sm font-bold">[ESC]</span>
-                </button>
               </div>
             </div>
 
-            {/* BOTTOM GAMEPLAY CONTROL DECK */}
-            <div className="flex flex-col items-center w-full mb-16 pointer-events-auto">
-              <div className="bg-surface-container-lowest/95 backdrop-blur-lg px-space-xl py-space-md rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-space-sm max-w-2xl w-full">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-space-xs">
-                    <span className="material-symbols-outlined text-primary text-xl">
-                      sports_esports
-                    </span>
-                    <span className="font-label-md text-label-md text-primary uppercase tracking-wide">
-                      Khu vực thử thách sinh học 2D ({completedStations.length}/3 Trạm đã phá)
+            {/* Top-Center: Transparent Auto-Fading HUD or Collapsed Pill */}
+            <div className="flex flex-col items-center">
+              {isHudExpanded ? (
+                <div
+                  className={`bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl border border-primary/20 shadow-lg p-3 sm:p-3.5 max-w-md w-full transition-all duration-700 pointer-events-auto flex flex-col gap-1.5 ${
+                    hudFading ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between border-b border-primary/10 pb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-primary text-base">biotech</span>
+                      <span className="font-headline-sm text-xs sm:text-sm text-primary font-bold">
+                        Màn 1: Dạ Dày • Học Viện Sinh Học 8
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleCloseHud}
+                      title="Thu gọn khung thông tin"
+                      className="w-6 h-6 rounded-full hover:bg-surface-container text-on-surface-variant flex items-center justify-center cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  </div>
+
+                  <p className="font-body-sm text-xs text-on-surface leading-snug">
+                    <strong className="text-primary">Mục tiêu:</strong> Khám phá 3 Trạm Sinh học (3 lớp cơ nghiền, Axit HCl &amp; Pepsin, Màng chất nhầy).
+                  </p>
+
+                  <div className="flex items-center justify-between gap-1 flex-wrap pt-0.5">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          completedStations.includes('tram-1')
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-surface-container text-on-surface'
+                        }`}
+                      >
+                        Trạm 1: Cơ
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          completedStations.includes('tram-2')
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-surface-container text-on-surface'
+                        }`}
+                      >
+                        Trạm 2: HCl
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          completedStations.includes('tram-3')
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-surface-container text-on-surface'
+                        }`}
+                      >
+                        Trạm 3: Dịch vị
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-tertiary">
+                      Mẫu vật: {totalSpecimensCount}/4
                     </span>
                   </div>
-                  <div className="flex items-center gap-space-sm">
-                    <span className="px-space-sm py-0.5 bg-secondary-fixed rounded-full font-label-sm text-label-sm text-on-secondary-fixed flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs text-tertiary">star</span>{' '}
-                      +250 EXP
-                    </span>
-                    <span className="px-space-sm py-0.5 bg-tertiary-fixed rounded-full font-label-sm text-label-sm text-on-tertiary-fixed flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs text-tertiary">
-                        diamond
-                      </span>{' '}
-                      +15 Ngọc
-                    </span>
+
+                  <div className="text-[10px] text-on-surface-variant/80 border-t border-primary/10 pt-1 flex items-center justify-between">
+                    <span>Phím: A/D/←/→ di chuyển • W/↑ nhảy • E tương tác</span>
+                    <span className="font-bold text-primary">[ESC] Tạm dừng</span>
                   </div>
                 </div>
+              ) : (
+                <div className="bg-surface-container-lowest/85 backdrop-blur-md border border-primary/20 px-3 py-1.5 rounded-full shadow-md text-xs font-label-sm text-primary flex items-center gap-2 pointer-events-auto transition-all hover:bg-surface-container-lowest">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="font-bold">
+                    Dạ Dày: {completedStations.length}/3 Trạm • {totalSpecimensCount}/4 Tiêu bản
+                  </span>
+                  <button
+                    onClick={handleOpenHud}
+                    title="Mở lại hướng dẫn & nhiệm vụ"
+                    className="w-6 h-6 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">info</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Top-Right: Quick Lab Tools & Interactive Pause Menu Button */}
+            <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+              <button
+                onClick={isHudExpanded ? handleCloseHud : handleOpenHud}
+                title={isHudExpanded ? 'Thu gọn thông tin' : 'Mở thông tin nhiệm vụ'}
+                className="w-10 h-10 rounded-full bg-surface-container-lowest/90 hover:bg-surface-container backdrop-blur-md shadow-md text-primary flex items-center justify-center transition-colors cursor-pointer border border-primary/20"
+              >
+                <span className="material-symbols-outlined text-lg">info</span>
+              </button>
+
+              <button
+                onClick={onOpenMicroscope}
+                title="Kính hiển vi quang học"
+                className="w-10 h-10 rounded-full bg-surface-container-lowest/90 hover:bg-surface-container backdrop-blur-md shadow-md text-primary flex items-center justify-center transition-colors cursor-pointer border border-primary/20"
+              >
+                <span className="material-symbols-outlined text-lg">zoom_in</span>
+              </button>
+
+              <button
+                onClick={onOpenNotebook}
+                title="Sổ tay Sinh học 8"
+                className="w-10 h-10 rounded-full bg-surface-container-lowest/90 hover:bg-surface-container backdrop-blur-md shadow-md text-primary flex items-center justify-center transition-colors cursor-pointer border border-primary/20"
+              >
+                <span className="material-symbols-outlined text-lg">menu_book</span>
+              </button>
+
+              {/* REAL PAUSE MENU BUTTON */}
+              <button
+                onClick={() => {
+                  stopPlayerMovementAndPhysics();
+                  setIsPaused(true);
+                }}
+                title="Tạm dừng trò chơi [ESC]"
+                className="h-10 px-3 bg-tertiary-fixed text-on-tertiary-fixed hover:bg-tertiary-fixed-dim backdrop-blur-md rounded-full shadow-md flex items-center gap-1 font-label-sm font-bold transition-all cursor-pointer border border-tertiary/20 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-lg">pause</span>
+                <span className="hidden sm:inline">Tạm dừng</span>
+              </button>
+            </div>
+          </div>
+
+          {/* TOUCH VIRTUAL CONTROLS (Rendered at bottom when virtualControls is active) */}
+          {virtualControls && !isPaused && (
+            <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex items-end justify-between select-none">
+              {/* Bottom-Left Directional D-Pad */}
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <button
+                  onMouseDown={() => (keysRef.current.KeyA = true)}
+                  onMouseUp={() => (keysRef.current.KeyA = false)}
+                  onMouseLeave={() => (keysRef.current.KeyA = false)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    keysRef.current.KeyA = true;
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    keysRef.current.KeyA = false;
+                  }}
+                  title="Đi sang trái"
+                  className="w-13 h-13 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold shadow-xl ring-2 ring-primary/20 active:scale-90 active:bg-primary active:text-on-primary flex items-center justify-center transition-transform touch-control"
+                >
+                  <span className="material-symbols-outlined text-2xl">arrow_back</span>
+                </button>
+
+                <button
+                  onMouseDown={() => (keysRef.current.KeyD = true)}
+                  onMouseUp={() => (keysRef.current.KeyD = false)}
+                  onMouseLeave={() => (keysRef.current.KeyD = false)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    keysRef.current.KeyD = true;
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    keysRef.current.KeyD = false;
+                  }}
+                  title="Đi sang phải"
+                  className="w-13 h-13 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold shadow-xl ring-2 ring-primary/20 active:scale-90 active:bg-primary active:text-on-primary flex items-center justify-center transition-transform touch-control"
+                >
+                  <span className="material-symbols-outlined text-2xl">arrow_forward</span>
+                </button>
+              </div>
+
+              {/* Bottom-Right Jump & Interact Buttons */}
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <button
+                  onClick={() => {
+                    if (groundedRef.current) {
+                      keysRef.current.jumpQueued = true;
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    if (groundedRef.current) {
+                      keysRef.current.jumpQueued = true;
+                    }
+                  }}
+                  title="Nhảy [W / ↑]"
+                  className="w-13 h-13 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold shadow-xl ring-2 ring-primary/20 active:scale-90 active:bg-primary active:text-on-primary flex items-center justify-center transition-transform touch-control"
+                >
+                  <span className="material-symbols-outlined text-2xl">arrow_upward</span>
+                </button>
 
                 <button
                   onClick={() => {
-                    if (completedStations.length >= 3) {
-                      onStageVictory();
-                    } else if (!completedStations.includes('tram-1')) {
-                      openStationIntroMenu('tram-1');
-                    } else if (!completedStations.includes('tram-2')) {
-                      openStationIntroMenu('tram-2');
+                    if (
+                      nearbyTarget === 'tram-1' ||
+                      nearbyTarget === 'tram-2' ||
+                      nearbyTarget === 'tram-3'
+                    ) {
+                      openStationIntroMenu(nearbyTarget);
+                    } else if (nearbyTarget === 'amylase-npc') {
+                      stopPlayerMovementAndPhysics();
+                      setAmylaseModalStep(0);
                     } else {
-                      openStationIntroMenu('tram-3');
+                      stopPlayerMovementAndPhysics();
+                      setPotabiDialogueIdx(0);
+                      setShowPotabiModal(true);
                     }
                   }}
-                  className="w-full py-space-sm px-space-lg bg-primary hover:bg-primary-container text-on-primary rounded-full font-label-lg text-label-lg shadow-lg flex items-center justify-center gap-space-sm transform transition active:translate-y-0.5 cursor-pointer"
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    if (
+                      nearbyTarget === 'tram-1' ||
+                      nearbyTarget === 'tram-2' ||
+                      nearbyTarget === 'tram-3'
+                    ) {
+                      openStationIntroMenu(nearbyTarget);
+                    } else if (nearbyTarget === 'amylase-npc') {
+                      stopPlayerMovementAndPhysics();
+                      setAmylaseModalStep(0);
+                    } else {
+                      stopPlayerMovementAndPhysics();
+                      setPotabiDialogueIdx(0);
+                      setShowPotabiModal(true);
+                    }
+                  }}
+                  title="Tương tác [E]"
+                  className={`w-14 h-14 rounded-full shadow-xl flex flex-col items-center justify-center transition-transform touch-control ${
+                    nearbyTarget
+                      ? 'bg-tertiary-fixed text-on-tertiary-fixed ring-4 ring-primary animate-bounce active:scale-90'
+                      : 'bg-surface-container-lowest/85 backdrop-blur-md text-primary ring-2 ring-primary/20 active:scale-90'
+                  }`}
                 >
                   <span className="material-symbols-outlined text-xl">
-                    {completedStations.length >= 3 ? 'emoji_events' : 'play_circle'}
+                    {nearbyTarget ? 'search' : 'touch_app'}
                   </span>
-                  <span>
-                    {completedStations.length >= 3
-                      ? 'HOÀN THÀNH MÀN 1 – VỀ BẢN ĐỒ MỞ KHÓA HỆ TUẦN HOÀN 🏆'
-                      : 'BẮT ĐẦU PHÁ THỬ THÁCH DẠ DÀY 🎮'}
-                  </span>
+                  <span className="text-[10px] font-bold leading-none">[E]</span>
                 </button>
+              </div>
+            </div>
+          )}
 
-                {/* On-Screen Touch/Click Controls + Keyboard Shortcuts */}
-                <div className="flex items-center justify-center flex-wrap gap-x-space-sm gap-y-1 text-on-surface-variant font-label-sm text-label-sm pt-1">
+          {/* FULL PAUSE MENU MODAL (Bio Blossom Tactile Style) */}
+          {isPaused && (
+            <div className="fixed inset-0 z-50 bg-inverse-surface/65 backdrop-blur-md flex items-center justify-center p-4 select-none safe-p-top safe-p-bottom">
+              <div className="bg-surface-container-lowest max-w-lg w-full rounded-3xl shadow-2xl border-4 border-primary flex flex-col overflow-hidden max-h-[90vh]">
+                {/* Pause Header */}
+                <div className="p-4 sm:p-5 bg-surface-container-high/60 border-b border-primary/20 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm">
+                      <span className="material-symbols-outlined text-xl">pause</span>
+                    </div>
+                    <div>
+                      <h2 className="font-headline-sm text-base sm:text-lg text-primary font-bold">
+                        TẠM DỪNG TRÒ CHƠI
+                      </h2>
+                      <p className="font-label-sm text-xs text-on-surface-variant">
+                        Màn 1: Dạ Dày • Cơ chế Tiêu hóa
+                      </p>
+                    </div>
+                  </div>
+
                   <button
-                    onMouseDown={() => (keysRef.current.KeyA = true)}
-                    onMouseUp={() => (keysRef.current.KeyA = false)}
-                    onMouseLeave={() => (keysRef.current.KeyA = false)}
-                    className="flex items-center gap-1 cursor-pointer hover:text-primary"
+                    onClick={() => setIsPaused(false)}
+                    title="Tiếp tục trò chơi"
+                    className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface flex items-center justify-center cursor-pointer transition-colors"
                   >
-                    <kbd className="px-2 py-0.5 bg-surface-container rounded font-bold text-on-surface text-[11px]">
-                      A / ←
-                    </kbd>
-                    <span>: Sang trái</span>
+                    <span className="material-symbols-outlined text-base">close</span>
                   </button>
-                  <span className="text-outline-variant">|</span>
+                </div>
+
+                {/* Pause Tabs */}
+                <div className="grid grid-cols-3 bg-surface-container p-1 border-b border-primary/10">
                   <button
-                    onMouseDown={() => (keysRef.current.KeyD = true)}
-                    onMouseUp={() => (keysRef.current.KeyD = false)}
-                    onMouseLeave={() => (keysRef.current.KeyD = false)}
-                    className="flex items-center gap-1 cursor-pointer hover:text-primary"
+                    onClick={() => setPauseTab('objectives')}
+                    className={`py-2 rounded-2xl font-label-md text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      pauseTab === 'objectives'
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
                   >
-                    <kbd className="px-2 py-0.5 bg-surface-container rounded font-bold text-on-surface text-[11px]">
-                      D / →
-                    </kbd>
-                    <span>: Sang phải</span>
+                    Nhiệm vụ
                   </button>
-                  <span className="text-outline-variant">|</span>
                   <button
-                    onClick={() => {
-                      if (groundedRef.current) {
-                        keysRef.current.jumpQueued = true;
-                      }
-                    }}
-                    className="flex items-center gap-1 cursor-pointer hover:text-primary"
+                    onClick={() => setPauseTab('settings')}
+                    className={`py-2 rounded-2xl font-label-md text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      pauseTab === 'settings'
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
                   >
-                    <kbd className="px-2 py-0.5 bg-surface-container rounded font-bold text-on-surface text-[11px]">
-                      W / ↑
-                    </kbd>
-                    <span>: Nhảy</span>
+                    Cài đặt
                   </button>
-                  <span className="text-outline-variant">|</span>
                   <button
-                    onClick={() => {
-                      if (
-                        nearbyTarget === 'tram-1' ||
-                        nearbyTarget === 'tram-2' ||
-                        nearbyTarget === 'tram-3'
-                      ) {
-                        openStationIntroMenu(nearbyTarget);
-                      } else if (nearbyTarget === 'amylase-npc') {
-                        stopPlayerMovementAndPhysics();
-                        setAmylaseModalStep(0);
-                      } else {
-                        stopPlayerMovementAndPhysics();
-                        setPotabiDialogueIdx(0);
-                        setShowPotabiModal(true);
-                      }
-                    }}
-                    className="flex items-center gap-1 cursor-pointer hover:text-primary"
+                    onClick={() => setPauseTab('controls')}
+                    className={`py-2 rounded-2xl font-label-md text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      pauseTab === 'controls'
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
                   >
-                    <kbd className="px-2 py-0.5 bg-surface-container rounded font-bold text-on-surface text-[11px]">
-                      E
-                    </kbd>
-                    <span>: Tương tác</span>
+                    Điều khiển
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-3">
+                  {/* TAB 1: OBJECTIVES */}
+                  {pauseTab === 'objectives' && (
+                    <div className="flex flex-col gap-3">
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15">
+                        <span className="font-label-sm text-xs uppercase text-primary font-bold block mb-1">
+                          Mục Tiêu Màn Chơi:
+                        </span>
+                        <p className="font-body-sm text-xs text-on-surface leading-relaxed">
+                          Khám phá trọn vẹn 3 Trạm Sinh học 8 trong dạ dày để thu thập đủ 3 mẫu vật tiêu bản và mở khóa Màn 2 (Hệ Tuần Hoàn).
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <span className="font-label-sm text-xs font-bold text-on-surface">
+                          Tiến Độ Các Trạm ({completedStations.length}/3 Trạm):
+                        </span>
+
+                        <div className="flex items-center justify-between p-2.5 bg-surface-container rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`material-symbols-outlined text-lg ${
+                                completedStations.includes('tram-1')
+                                  ? 'text-emerald-600'
+                                  : 'text-outline'
+                              }`}
+                            >
+                              {completedStations.includes('tram-1')
+                                ? 'check_circle'
+                                : 'radio_button_unchecked'}
+                            </span>
+                            <div>
+                              <span className="font-label-sm text-xs text-on-surface block font-bold">
+                                Trạm 1: 3 Lớp cơ dạ dày
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant">
+                                Nghiền đảo thức ăn thành vị trấp
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              completedStations.includes('tram-1')
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-surface-container-high text-on-surface-variant'
+                            }`}
+                          >
+                            {completedStations.includes('tram-1') ? 'Đã xong' : 'Chưa xong'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between p-2.5 bg-surface-container rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`material-symbols-outlined text-lg ${
+                                completedStations.includes('tram-2')
+                                  ? 'text-emerald-600'
+                                  : 'text-outline'
+                              }`}
+                            >
+                              {completedStations.includes('tram-2')
+                                ? 'check_circle'
+                                : 'radio_button_unchecked'}
+                            </span>
+                            <div>
+                              <span className="font-label-sm text-xs text-on-surface block font-bold">
+                                Trạm 2: Axit HCl &amp; Pepsin
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant">
+                                Phân cắt Protein thành chuỗi ngắn
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              completedStations.includes('tram-2')
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-surface-container-high text-on-surface-variant'
+                            }`}
+                          >
+                            {completedStations.includes('tram-2') ? 'Đã xong' : 'Chưa xong'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between p-2.5 bg-surface-container rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`material-symbols-outlined text-lg ${
+                                completedStations.includes('tram-3')
+                                  ? 'text-emerald-600'
+                                  : 'text-outline'
+                              }`}
+                            >
+                              {completedStations.includes('tram-3')
+                                ? 'check_circle'
+                                : 'radio_button_unchecked'}
+                            </span>
+                            <div>
+                              <span className="font-label-sm text-xs text-on-surface block font-bold">
+                                Trạm 3: Dịch vị &amp; Màng chất nhầy
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant">
+                                Bảo vệ thành dạ dày khỏi axit
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              completedStations.includes('tram-3')
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-surface-container-high text-on-surface-variant'
+                            }`}
+                          >
+                            {completedStations.includes('tram-3') ? 'Đã xong' : 'Chưa xong'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between p-2.5 bg-surface-container rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`material-symbols-outlined text-lg ${
+                                amylaseInspected ? 'text-emerald-600' : 'text-outline'
+                              }`}
+                            >
+                              {amylaseInspected ? 'check_circle' : 'radio_button_unchecked'}
+                            </span>
+                            <div>
+                              <span className="font-label-sm text-xs text-on-surface block font-bold">
+                                NPC Túi tiết Amylase
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant">
+                                Bất hoạt bởi pH axit dạ dày
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              amylaseInspected
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-surface-container-high text-on-surface-variant'
+                            }`}
+                          >
+                            {amylaseInspected ? 'Đã gặp' : 'Chưa gặp'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: REAL SETTINGS */}
+                  {pauseTab === 'settings' && (
+                    <div className="flex flex-col gap-3">
+                      {/* Audio Group */}
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15 flex flex-col gap-2.5">
+                        <span className="font-label-sm text-xs text-primary font-bold uppercase">
+                          Âm Thanh:
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-on-surface">
+                              music_note
+                            </span>
+                            <span className="font-body-sm text-xs text-on-surface">Nhạc nền (BGM)</span>
+                          </div>
+                          <button
+                            onClick={handleToggleBgm}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              bgmEnabled ? 'bg-primary' : 'bg-outline-variant'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                bgmEnabled ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-on-surface">
+                              volume_up
+                            </span>
+                            <span className="font-body-sm text-xs text-on-surface">
+                              Hiệu ứng âm thanh (SFX)
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleToggleSfx}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              sfxEnabled ? 'bg-primary' : 'bg-outline-variant'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                sfxEnabled ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Display & Effects Group */}
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15 flex flex-col gap-2.5">
+                        <span className="font-label-sm text-xs text-primary font-bold uppercase">
+                          Hiển Thị &amp; Đồ Họa:
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-on-surface">
+                              air
+                            </span>
+                            <span className="font-body-sm text-xs text-on-surface">
+                              Sương mù dịch vị &amp; Hiệu ứng động
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleToggleAmbient}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              ambientEffects ? 'bg-primary' : 'bg-outline-variant'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                ambientEffects ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-on-surface">
+                              motion_photos_off
+                            </span>
+                            <span className="font-body-sm text-xs text-on-surface">
+                              Giảm hiệu ứng chuyển động
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleToggleReducedMotion}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              reducedMotion ? 'bg-primary' : 'bg-outline-variant'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                reducedMotion ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Controls Group */}
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15 flex flex-col gap-2.5">
+                        <span className="font-label-sm text-xs text-primary font-bold uppercase">
+                          Điều Khiển Cảm Ứng:
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-on-surface">
+                              touch_app
+                            </span>
+                            <span className="font-body-sm text-xs text-on-surface">
+                              Hiển thị phím ảo cảm ứng trên màn hình
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleToggleVirtualControls}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              virtualControls ? 'bg-primary' : 'bg-outline-variant'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                virtualControls ? 'right-0.5' : 'left-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: CONTROLS CHEATSHEET */}
+                  {pauseTab === 'controls' && (
+                    <div className="flex flex-col gap-3">
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15 flex flex-col gap-2">
+                        <span className="font-label-sm text-xs text-primary font-bold uppercase">
+                          Hướng Dẫn Bàn Phím (Máy Tính):
+                        </span>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              A / ←
+                            </kbd>
+                            <span>Sang trái</span>
+                          </div>
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              D / →
+                            </kbd>
+                            <span>Sang phải</span>
+                          </div>
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              W / ↑
+                            </kbd>
+                            <span>Nhảy lên</span>
+                          </div>
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              E
+                            </kbd>
+                            <span>Tương tác trạm</span>
+                          </div>
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              ESC
+                            </kbd>
+                            <span>Tạm dừng / Đóng</span>
+                          </div>
+                          <div className="p-2 bg-surface-container rounded-xl flex items-center gap-2">
+                            <kbd className="px-2 py-1 bg-surface font-bold text-primary rounded shadow-xs">
+                              Tab
+                            </kbd>
+                            <span>Mở Sổ tay</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-surface-container-low p-3.5 rounded-2xl border border-primary/15 flex flex-col gap-1.5">
+                        <span className="font-label-sm text-xs text-primary font-bold uppercase">
+                          Thiết Bị Cảm Ứng (Điện Thoại &amp; Tablet):
+                        </span>
+                        <p className="font-body-sm text-xs text-on-surface leading-relaxed">
+                          Sử dụng cụm phím ◀ ▶ ở góc dưới bên trái để di chuyển, và phím ⬆ (Nhảy), [E] (Tương tác) ở góc dưới bên phải.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pause Action Buttons */}
+                <div className="p-4 bg-surface-container-high/60 border-t border-primary/20 flex flex-col sm:flex-row items-center gap-2">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="w-full sm:flex-1 py-2.5 px-4 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-sm font-bold shadow-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-lg">play_arrow</span>
+                    <span>TIẾP TỤC CHƠI</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowRestartConfirm(true)}
+                    className="w-full sm:w-auto py-2.5 px-4 rounded-full bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-md text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-lg">restart_alt</span>
+                    <span>Chơi lại</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowExitConfirm(true)}
+                    className="w-full sm:w-auto py-2.5 px-4 rounded-full bg-surface-container hover:bg-surface-container-highest text-primary font-label-md text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-lg">map</span>
+                    <span>Về bản đồ</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* RESTART CONFIRMATION MODAL */}
+          {showRestartConfirm && (
+            <div className="fixed inset-0 z-50 bg-inverse-surface/75 backdrop-blur-md flex items-center justify-center p-4 select-none safe-p-top safe-p-bottom">
+              <div className="bg-surface-container-lowest max-w-sm w-full rounded-3xl p-5 shadow-2xl border-2 border-primary flex flex-col items-center text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center shadow-inner">
+                  <span className="material-symbols-outlined text-2xl">restart_alt</span>
+                </div>
+                <h3 className="font-headline-sm text-base text-on-surface font-bold">
+                  Bắt đầu lại màn Dạ Dày?
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                  Nhân vật Potabi sẽ được đưa về vị trí xuất phát ban đầu. Tiến trình tài khoản, EXP và kim cương của bạn sẽ được giữ nguyên an toàn.
+                </p>
+                <div className="grid grid-cols-2 gap-2 w-full pt-1">
+                  <button
+                    onClick={() => setShowRestartConfirm(false)}
+                    className="py-2 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    HỦY BỎ
+                  </button>
+                  <button
+                    onClick={handleRestartStage}
+                    className="py-2 px-3 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                  >
+                    ĐỒNG Ý CHƠI LẠI
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* EXIT TO MAP CONFIRMATION MODAL */}
+          {showExitConfirm && (
+            <div className="fixed inset-0 z-50 bg-inverse-surface/75 backdrop-blur-md flex items-center justify-center p-4 select-none safe-p-top safe-p-bottom">
+              <div className="bg-surface-container-lowest max-w-sm w-full rounded-3xl p-5 shadow-2xl border-2 border-primary flex flex-col items-center text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-surface-container text-primary flex items-center justify-center shadow-inner">
+                  <span className="material-symbols-outlined text-2xl">map</span>
+                </div>
+                <h3 className="font-headline-sm text-base text-on-surface font-bold">
+                  Trở về Bản Đồ Hành Trình?
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                  Mọi tiến trình câu đố và trạm đã hoàn thành đều được lưu tự động lên hệ thống. Bạn có thể quay lại tiếp tục bất cứ lúc nào!
+                </p>
+                <div className="grid grid-cols-2 gap-2 w-full pt-1">
+                  <button
+                    onClick={() => setShowExitConfirm(false)}
+                    className="py-2 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Ở LẠI CHƠI TIẾP
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExitConfirm(false);
+                      setIsPaused(false);
+                      onExitToMap();
+                    }}
+                    className="py-2 px-3 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                  >
+                    VỀ BẢN ĐỒ
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Multi-Step Dialogue Modal for Potabi Companion */}
           {showPotabiModal && (
@@ -1264,7 +1915,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
                       alt="Potabi Dialogue Portrait"
                       className="w-full h-full object-contain rounded-full"
                       referrerPolicy="no-referrer"
-                      src={IMAGES.potabiAvatar}
+                      src={IMAGES.potabiBlueAvatar}
                     />
                   </div>
                   <div className="flex-1">
@@ -1359,12 +2010,12 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
 
           {/* Station Introduction Menu (Opened when pressing [E] near a station) */}
           {introStation && (
-            <div className="fixed inset-0 z-50 bg-inverse-surface/75 backdrop-blur-md flex items-center justify-center p-space-md overflow-y-auto">
-              <div className="bg-surface-container-lowest max-w-2xl w-full rounded-[2rem] shadow-2xl border-4 border-primary overflow-hidden flex flex-col">
-                {/* A. Station Representative Artwork Banner */}
-                <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-inverse-surface">
+            <div className="fixed inset-0 z-50 bg-inverse-surface/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-space-md overflow-y-auto safe-p-top safe-p-bottom">
+              <div className="bg-surface-container-lowest max-w-xl w-full rounded-3xl shadow-2xl border-4 border-primary overflow-hidden flex flex-col max-h-[90vh]">
+                {/* A. Station Representative Artwork Banner (Optimized height for compact viewing) */}
+                <div className="relative h-32 sm:h-40 w-full overflow-hidden bg-inverse-surface shrink-0">
                   <div
-                    className="absolute inset-0 bg-no-repeat"
+                    className="absolute inset-0 bg-no-repeat bg-cover bg-center"
                     style={{
                       backgroundImage: `url('${introStation.image}')`,
                       ...introStation.imageCropStyle,
@@ -1377,60 +2028,56 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/25 to-transparent pointer-events-none"></div>
 
                   {/* Top Badges inside Illustration */}
-                  <div className="relative z-10 p-space-md flex items-center justify-between gap-space-xs">
-                    <span className="px-3 py-1 rounded-full bg-inverse-surface/85 backdrop-blur-md text-tertiary-fixed font-label-sm text-label-sm font-bold flex items-center gap-1.5 shadow-sm">
+                  <div className="relative z-10 p-3 sm:p-space-md flex items-center justify-between gap-space-xs">
+                    <span className="px-2.5 py-0.5 rounded-full bg-inverse-surface/85 backdrop-blur-md text-tertiary-fixed font-label-sm text-xs font-bold flex items-center gap-1 shadow-sm">
                       <span className="material-symbols-outlined text-sm">biotech</span>
                       <span>{introStation.organBadge}</span>
                     </span>
 
                     <div className="flex items-center gap-1.5">
                       {completedStations.includes(introStation.id) ? (
-                        <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-label-sm text-label-sm font-bold flex items-center gap-1 shadow-sm">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-label-sm text-xs font-bold flex items-center gap-1 shadow-sm">
                           <span className="material-symbols-outlined text-xs">check_circle</span>
                           <span>Đã hoàn thành</span>
                         </span>
                       ) : stationProgressMap[introStation.id] ? (
-                        <span className="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold flex items-center gap-1 shadow-sm">
+                        <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-xs font-bold flex items-center gap-1 shadow-sm">
                           <span className="material-symbols-outlined text-xs">pending</span>
-                          <span>Đang khám phá dở</span>
+                          <span>Đang khám phá</span>
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold flex items-center gap-1 shadow-sm">
+                        <span className="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-xs font-bold flex items-center gap-1 shadow-sm">
                           <span className="material-symbols-outlined text-xs">explore</span>
-                          <span>Trạm khám phá mới</span>
+                          <span>Trạm mới</span>
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Potabi Explorer Emblem & Biological Parameters */}
-                  <div className="absolute bottom-3 left-space-md right-space-md z-10 flex items-end justify-between gap-space-sm">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold shadow-sm">
+                  <div className="absolute bottom-2 left-3 right-3 sm:left-space-md sm:right-space-md z-10 flex items-end justify-between gap-space-sm">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-[11px] font-bold shadow-sm">
                         {introStation.pH}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-label-sm font-semibold shadow-sm">
+                      <span className="px-2 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[11px] font-semibold shadow-sm">
                         {introStation.enzyme}
                       </span>
                     </div>
 
-                    <div className="w-16 h-16 rounded-2xl bg-surface-container-lowest/90 backdrop-blur-md p-1.5 shadow-lg flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-surface-container-lowest/90 backdrop-blur-md p-1 shadow-md flex items-center justify-center shrink-0">
                       <img
                         alt="Potabi Station Guide"
                         className="w-full h-full object-contain"
                         referrerPolicy="no-referrer"
-                        src={
-                          introStation.id === 'tram-2'
-                            ? IMAGES.potabiBlueAvatar
-                            : IMAGES.potabiAvatar
-                        }
+                        src={IMAGES.potabiBlueAvatar}
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* B, C, D. Station Title, Subtitle, Introduction & Experience Preview */}
-                <div className="p-space-lg flex flex-col gap-space-md">
+                <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto">
                   <div>
                     <h2 className="font-headline-md text-headline-md text-on-surface">
                       {introStation.title}
@@ -1534,7 +2181,7 @@ export const StomachStageScreen: React.FC<StomachStageScreenProps> = ({
                         alt="Potabi"
                         className="w-14 h-14 rounded-full object-contain bg-surface-container-lowest p-1 shrink-0"
                         referrerPolicy="no-referrer"
-                        src={IMAGES.potabiAvatar}
+                        src={IMAGES.potabiBlueAvatar}
                       />
                       <div className="flex flex-col gap-1 flex-1">
                         <div className="flex items-center justify-between">

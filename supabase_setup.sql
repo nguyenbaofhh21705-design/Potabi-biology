@@ -8,7 +8,7 @@
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL DEFAULT 'Nhà Thám Hiểm Vi Mô',
-  avatar_variant TEXT NOT NULL DEFAULT 'yellow' CHECK (avatar_variant IN ('yellow', 'blue')),
+  avatar_variant TEXT NOT NULL DEFAULT 'blue' CHECK (avatar_variant IN ('blue', 'yellow')),
   grade_class TEXT DEFAULT 'Sinh học 8',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

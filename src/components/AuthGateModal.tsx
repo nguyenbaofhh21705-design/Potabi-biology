@@ -21,7 +21,6 @@ export const AuthGateModal: React.FC<AuthGateModalProps> = ({
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [displayName, setDisplayName] = useState<string>('');
-  const [avatarVariant, setAvatarVariant] = useState<'yellow' | 'blue'>('yellow');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
@@ -59,7 +58,7 @@ export const AuthGateModal: React.FC<AuthGateModalProps> = ({
           options: {
             data: {
               display_name: chosenName,
-              avatar_variant: avatarVariant,
+              avatar_variant: 'blue',
             },
           },
         });
@@ -160,7 +159,7 @@ export const AuthGateModal: React.FC<AuthGateModalProps> = ({
                   alt="Potabi Mascot"
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
-                  src={avatarVariant === 'blue' ? IMAGES.potabiBlueAvatar : IMAGES.potabiAvatar}
+                  src={IMAGES.potabiBlueAvatar}
                 />
               </div>
               <div>
@@ -257,54 +256,17 @@ export const AuthGateModal: React.FC<AuthGateModalProps> = ({
           {/* Email / Password Form */}
           <form onSubmit={handleEmailAuth} className="flex flex-col gap-space-sm">
             {mode === 'register' && (
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-space-sm">
-                <div className="sm:col-span-7 flex flex-col gap-1">
-                  <label className="font-label-sm text-label-sm text-on-surface">
-                    Tên hiển thị Nhà Thám Hiểm
-                  </label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="VD: Minh Anh - Lớp 8A1"
-                    className="px-space-md py-2 rounded-2xl bg-surface-container-low border border-outline-variant/50 focus:border-primary outline-none font-body-sm text-body-sm text-on-surface"
-                  />
-                </div>
-                <div className="sm:col-span-5 flex flex-col gap-1">
-                  <label className="font-label-sm text-label-sm text-on-surface">
-                    Biểu tượng Potabi
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5 bg-surface-container-low p-1 rounded-2xl border border-outline-variant/40">
-                    <button
-                      type="button"
-                      onClick={() => setAvatarVariant('yellow')}
-                      className={`py-1 px-2 rounded-xl flex items-center justify-center gap-1 font-label-sm text-label-sm cursor-pointer ${
-                        avatarVariant === 'yellow'
-                          ? 'bg-tertiary-fixed text-on-tertiary-fixed font-bold'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      <img src={IMAGES.potabiAvatar} alt="" className="w-5 h-5 object-contain" />
-                      <span>Vàng</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvatarVariant('blue')}
-                      className={`py-1 px-2 rounded-xl flex items-center justify-center gap-1 font-label-sm text-label-sm cursor-pointer ${
-                        avatarVariant === 'blue'
-                          ? 'bg-secondary-fixed text-primary font-bold'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      <img
-                        src={IMAGES.potabiBlueAvatar}
-                        alt=""
-                        className="w-5 h-5 object-contain"
-                      />
-                      <span>Xanh</span>
-                    </button>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface">
+                  Tên hiển thị Nhà Thám Hiểm
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="VD: Minh Anh - Lớp 8A1"
+                  className="px-space-md py-2.5 rounded-2xl bg-surface-container-low border border-outline-variant/50 focus:border-primary outline-none font-body-sm text-body-sm text-on-surface"
+                />
               </div>
             )}
 
