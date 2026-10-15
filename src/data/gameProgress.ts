@@ -58,14 +58,35 @@ export const DEFAULT_GAME_STATE: GameProgressState = {
   diamonds: 999,
   equippedOutfitId: 'blouse-bac-si',
   ownedOutfitIds: ['crown-default', 'blouse-bac-si', 'giot-nuoc-nano', 'kinh-hien-vi-quang'],
-  unlockedStageIds: ['tieu-hoa', 'tuan-hoan', 'ho-hap', 'than-kinh', 'van-dong'],
-  completedStageIds: ['tieu-hoa', 'tuan-hoan', 'ho-hap', 'than-kinh', 'van-dong'],
+  unlockedStageIds: [
+    'tieu-hoa',
+    'tuan-hoan',
+    'ho-hap',
+    'than-kinh',
+    'van-dong',
+    'bai-tiet',
+    'noi-tiet',
+    'sinh-duc',
+  ],
+  completedStageIds: [
+    'tieu-hoa',
+    'tuan-hoan',
+    'ho-hap',
+    'than-kinh',
+    'van-dong',
+    'bai-tiet',
+    'noi-tiet',
+    'sinh-duc',
+  ],
   stageProgress: {
     'tieu-hoa': 100,
     'tuan-hoan': 100,
     'ho-hap': 100,
     'than-kinh': 100,
     'van-dong': 100,
+    'bai-tiet': 100,
+    'noi-tiet': 100,
+    'sinh-duc': 100,
   },
   completedStations: ['tram-1', 'tram-2', 'tram-3'],
   unlockedSpecimens: [
@@ -77,6 +98,9 @@ export const DEFAULT_GAME_STATE: GameProgressState = {
     'co-da-day',
     'pepsin',
     'chat-nhay-mucin',
+    'nephron-podocyte',
+    'insulin-hormone',
+    'giao-tu-haploid',
   ],
   weeklyQuests: {
     enzymeQuizDone: true,
@@ -133,6 +157,9 @@ export function loadGameProgress(): GameProgressState {
         'ho-hap': 100,
         'than-kinh': 100,
         'van-dong': 100,
+        'bai-tiet': 100,
+        'noi-tiet': 100,
+        'sinh-duc': 100,
       },
       completedStations: Array.from(
         new Set([...DEFAULT_GAME_STATE.completedStations, ...(parsed.completedStations || [])])
@@ -228,6 +255,15 @@ export function mergeGameProgress(
   }
   if (uniqueCompletedStages.includes('than-kinh')) {
     unlockedStageSet.add('van-dong');
+  }
+  if (uniqueCompletedStages.includes('van-dong')) {
+    unlockedStageSet.add('bai-tiet');
+  }
+  if (uniqueCompletedStages.includes('bai-tiet')) {
+    unlockedStageSet.add('noi-tiet');
+  }
+  if (uniqueCompletedStages.includes('noi-tiet')) {
+    unlockedStageSet.add('sinh-duc');
   }
 
   const weeklyQuests = {

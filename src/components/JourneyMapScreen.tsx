@@ -4,7 +4,7 @@ import { calculateExplorerLevel } from '../data/gameProgress';
 
 interface JourneyMapScreenProps {
   onPlayCutscene: () => void;
-  onPlayStage2D: () => void;
+  onPlayStage2D: (stageId: string) => void;
   onOpenNotebook: () => void;
   onNavigateQuests: () => void;
   diamonds: number;
@@ -14,6 +14,7 @@ interface JourneyMapScreenProps {
   stageProgress: Record<string, number>;
   unlockedSpecimens: string[];
   onCompleteStageQuiz: (stageId: string, expReward: number, diamondReward: number) => void;
+  onOpenAssetShowcase?: () => void;
 }
 
 const CIRCULATORY_QUIZ = [
@@ -160,18 +161,130 @@ const MUSCULOSKELETAL_QUIZ = [
   },
 ];
 
+const EXCRETORY_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 38, 39): Nơi nào trong đơn vị chức năng Nephron thực hiện quá trình lọc máu để tạo ra nước tiểu đầu?',
+    options: [
+      'A. Nang cầu thận và búi mao mạch Cầu thận',
+      'B. Ống góp nước tiểu',
+      'C. Bóng đái (Bàng quang)',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Áp lực máu cao trong quản cầu Malpighi đẩy nước và chất hòa tan qua màng lọc.',
+    explanation: 'Chính xác! Cầu thận là nơi diễn ra quá trình lọc máu, tạo ra khoảng 170 lít nước tiểu đầu mỗi ngày.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 39): Nhờ quá trình nào tại ống thận mà cơ thể không bị mất hết nước và chất dinh dưỡng quý giá?',
+    options: [
+      'A. Quá trình hấp thụ lại (hấp thụ lại hơn 99% nước, toàn bộ glucozơ và ion khoáng cần thiết)',
+      'B. Quá trình lọc máu lần thứ hai',
+      'C. Quá trình lên men vi sinh vật',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Các tế bào biểu mô ống thận có nhiều vi nhung mao và ty thể để vận chuyển chủ động.',
+    explanation: 'Tuyệt vời! Quá trình hấp thụ lại đưa nước, glucozơ và ion có ích trở lại mao mạch quanh ống thận.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 39): Mỗi ngày ở người trưởng thành khỏe mạnh tạo ra khoảng bao nhiêu lít nước tiểu chính thức?',
+    options: [
+      'A. Khoảng 1,5 lít nước tiểu chính thức',
+      'B. Khoảng 170 lít',
+      'C. Khoảng 50 lít',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Lượng dịch sau khi đã được hấp thụ lại 99% lượng nước.',
+    explanation: 'Hoàn hảo! Từ 170 lít nước tiểu đầu, sau khi qua ống thận chỉ còn lại khoảng 1.5 lít nước tiểu chính thức đậm đặc chứa chất thải.',
+  },
+];
+
+const ENDOCRINE_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 55): Tuyến nội tiết khác với tuyến ngoại tiết ở đặc điểm giải phẫu và sinh lý nào?',
+    options: [
+      'A. Tuyến nội tiết không có ống dẫn, sản phẩm tiết (hormone) ngấm thẳng vào dòng máu',
+      'B. Tuyến nội tiết có ống dẫn rất dài dẫn ra ngoài da',
+      'C. Tuyến nội tiết chỉ tiết chất bôi trơn',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Các tế bào tuyến nằm bao quanh mạng lưới mao mạch máu dày đặc.',
+    explanation: 'Chính xác! Tuyến nội tiết không có ống dẫn; chất tiết là các hormone ngấm thẳng vào máu để vận chuyển đi khắp cơ thể.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 56): Tuyến nội tiết nào giữ vai trò "nhạc trưởng" chỉ huy và điều hòa hoạt động của hầu hết các tuyến nội tiết khác?',
+    options: [
+      'A. Tuyến Yên (nằm ở nền sọ)',
+      'B. Tuyến Mồ hôi',
+      'C. Tuyến Nước bọt',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Tuyến này tiết các hormone kích thích tuyến giáp (TSH), tuyến trên thận (ACTH), tuyến sinh dục (FSH, LH).',
+    explanation: 'Rất chính xác! Tuyến Yên là tuyến quan trọng nhất, tiết các hormone kích thích điều khiển các tuyến nội tiết khác.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 57): Hai loại hormone nào do các tế bào đảo tụy Langerhans tiết ra để cùng điều hòa lượng đường huyết luôn ổn định quanh 0,12%?',
+    options: [
+      'A. Insulin (hạ đường huyết) và Glucagon (nâng đường huyết)',
+      'B. Adrenalin và Pepsin',
+      'C. Amylase và Mucin',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Một chất kích thích chuyển glucozơ thành glicôgen, chất kia phân giải glicôgen thành glucozơ.',
+    explanation: 'Xuất sắc! Insulin từ tế bào beta làm hạ đường huyết, còn Glucagon từ tế bào alpha nâng đường huyết khi đói.',
+  },
+];
+
+const REPRODUCTIVE_QUIZ = [
+  {
+    q: 'Câu 1/3 (Sinh học 8 - Bài 60, 62): Số lượng nhiễm sắc thể trong mỗi tế bào sinh dục (giao tử: trứng hoặc tinh trùng) của người là bao nhiêu?',
+    options: [
+      'A. Bộ đơn bội n = 23 nhiễm sắc thể',
+      'B. Bộ lưỡng bội 2n = 46 nhiễm sắc thể',
+      'C. Không có nhiễm sắc thể nào',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Qua giảm phân, số lượng NST giảm đi một nửa so với tế bào sinh dưỡng.',
+    explanation: 'Chính xác! Giao tử chỉ mang bộ đơn bội n = 23 chiếc. Khi thụ tinh kết hợp sẽ tạo thành hợp tử 2n = 46.',
+  },
+  {
+    q: 'Câu 2/3 (Sinh học 8 - Bài 62): Ở người, sự thụ tinh khoa học bình thường diễn ra tại vị trí nào trong cơ quan sinh dục nữ?',
+    options: [
+      'A. Tại 1/3 phía ngoài của ống dẫn trứng (vòi trứng)',
+      'B. Trong lòng dạ dày',
+      'C. Trong buồng tim',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Tinh trùng bơi qua tử cung lên gặp trứng tại đoạn vòi trứng.',
+    explanation: 'Tuyệt vời! Sự thụ tinh diễn ra ở 1/3 phía ngoài của ống dẫn trứng khi tinh trùng khỏe nhất gặp noãn bào.',
+  },
+  {
+    q: 'Câu 3/3 (Sinh học 8 - Bài 62): Sau khi thụ tinh tạo thành hợp tử (2n = 46), phôi sẽ di chuyển về đâu để làm tổ và phát triển suốt thai kỳ?',
+    options: [
+      'A. Di chuyển về buồng Tử Cung để làm tổ trong lớp niêm mạc dày xốp',
+      'B. Di chuyển về Bàng quang',
+      'C. Di chuyển về Phổi',
+    ],
+    correct: 0,
+    hint: 'Gợi ý: Cơ quan có lớp cơ trơn đàn hồi dày và niêm mạc giàu mạch máu nuôi thai.',
+    explanation: 'Hoàn hảo! Phôi di chuyển về làm tổ an toàn trong lớp niêm mạc tử cung đã được chuẩn bị sẵn sàng.',
+  },
+];
+
 export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
   onPlayCutscene,
   onPlayStage2D,
   onOpenNotebook,
+  onNavigateQuests,
+  diamonds,
   exp,
   unlockedStageIds,
   completedStageIds,
   stageProgress,
   unlockedSpecimens,
   onCompleteStageQuiz,
+  onOpenAssetShowcase,
 }) => {
   const [selectedStageId, setSelectedStageId] = useState<string>('tuan-hoan');
+  const [activeRegion, setActiveRegion] = useState<'all' | 'region1' | 'region2'>('all');
   const [showTheoryModal, setShowTheoryModal] = useState<boolean>(false);
   const [filterUnlockedOnly, setFilterUnlockedOnly] = useState<boolean>(false);
   const [activeBottomModal, setActiveBottomModal] = useState<
@@ -212,21 +325,7 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
       return;
     }
 
-    if (selectedStageId === 'tieu-hoa') {
-      onPlayCutscene();
-    } else if (
-      selectedStageId === 'tuan-hoan' ||
-      selectedStageId === 'ho-hap' ||
-      selectedStageId === 'than-kinh' ||
-      selectedStageId === 'van-dong'
-    ) {
-      setActiveQuizStageId(selectedStageId);
-      setQuizStep(0);
-      setSelectedOpt(null);
-      setShowHint(false);
-    } else {
-      onPlayStage2D();
-    }
+    onPlayStage2D(selectedStageId);
   };
 
   const activeQuizData =
@@ -236,6 +335,12 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
       ? NERVOUS_QUIZ
       : activeQuizStageId === 'van-dong'
       ? MUSCULOSKELETAL_QUIZ
+      : activeQuizStageId === 'bai-tiet'
+      ? EXCRETORY_QUIZ
+      : activeQuizStageId === 'noi-tiet'
+      ? ENDOCRINE_QUIZ
+      : activeQuizStageId === 'sinh-duc'
+      ? REPRODUCTIVE_QUIZ
       : CIRCULATORY_QUIZ;
 
   const handleNextQuizQuestion = () => {
@@ -291,6 +396,44 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 style={{ width: `${Math.max(42, totalRegionProgress)}%` }}
               ></div>
             </div>
+            <div className="flex items-center gap-1.5 bg-surface-container-high px-2 py-1 rounded-full text-xs">
+              <button
+                onClick={() => setActiveRegion('all')}
+                className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                  activeRegion === 'all' ? 'bg-primary text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Tất cả (8 Màn)
+              </button>
+              <button
+                onClick={() => setActiveRegion('region1')}
+                className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                  activeRegion === 'region1' ? 'bg-primary text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Khu 1 (Màn 1-5)
+              </button>
+              <button
+                onClick={() => setActiveRegion('region2')}
+                className={`px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                  activeRegion === 'region2' ? 'bg-purple-600 text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Khu 2 (Màn 6-8 Mới) ✨
+              </button>
+            </div>
+
+            {onOpenAssetShowcase && (
+              <button
+                onClick={onOpenAssetShowcase}
+                title="Xem Studio Thiết Kế Thị Giác 3 Màn Mới"
+                className="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white font-label-sm text-label-sm font-bold shadow-md hover:scale-105 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">palette</span>
+                <span className="hidden sm:inline">Asset Studio 3 Màn Mới</span>
+              </button>
+            )}
+
             <button
               onClick={() => setFilterUnlockedOnly(!filterUnlockedOnly)}
               title={filterUnlockedOnly ? 'Hiện tất cả các màn' : 'Chỉ hiện màn đã mở khóa'}
@@ -642,6 +785,195 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Stage 6: Hệ Bài Tiết */}
+            {(activeRegion === 'all' || activeRegion === 'region2') &&
+              (!filterUnlockedOnly || unlockedStageIds.includes('bai-tiet')) && (
+                <div
+                  onClick={() => {
+                    setLockNotice(null);
+                    setSelectedStageId('bai-tiet');
+                  }}
+                  className={`absolute left-[24%] bottom-[20%] flex flex-col items-center group cursor-pointer transition-transform ${
+                    selectedStageId === 'bai-tiet' ? 'scale-105' : ''
+                  }`}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <span
+                      className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                        completedStageIds.includes('bai-tiet')
+                          ? 'bg-emerald-500 text-white'
+                          : unlockedStageIds.includes('bai-tiet')
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-surface-dim text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {completedStageIds.includes('bai-tiet')
+                          ? 'verified'
+                          : unlockedStageIds.includes('bai-tiet')
+                          ? 'lock_open'
+                          : 'lock'}
+                      </span>{' '}
+                      {completedStageIds.includes('bai-tiet')
+                        ? 'ĐÃ HOÀN THÀNH'
+                        : unlockedStageIds.includes('bai-tiet')
+                        ? 'MỚI MỞ KHÓA'
+                        : 'Cấp 20'}
+                    </span>
+                    <div
+                      className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                        unlockedStageIds.includes('bai-tiet')
+                          ? 'bg-gradient-to-tr from-purple-600 via-pink-500 to-sky-400 ring-4 ring-purple-300/60 text-white'
+                          : 'bg-surface-container-highest text-outline'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-3xl">water_drop</span>
+                    </div>
+                    <div className="absolute -bottom-1 -right-2 bg-purple-700 text-white px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm font-bold">
+                      Màn 6
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                      selectedStageId === 'bai-tiet' ? 'border-purple-400' : 'border-transparent'
+                    }`}
+                  >
+                    <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
+                      Màn 6: Hệ Bài Tiết
+                    </p>
+                    <p className="font-label-sm text-label-sm text-purple-300">
+                      Cầu Thận &amp; Ống Thận
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            {/* Stage 7: Hệ Nội Tiết */}
+            {(activeRegion === 'all' || activeRegion === 'region2') &&
+              (!filterUnlockedOnly || unlockedStageIds.includes('noi-tiet')) && (
+                <div
+                  onClick={() => {
+                    setLockNotice(null);
+                    setSelectedStageId('noi-tiet');
+                  }}
+                  className={`absolute left-[52%] bottom-[22%] flex flex-col items-center group cursor-pointer transition-transform ${
+                    selectedStageId === 'noi-tiet' ? 'scale-105' : ''
+                  }`}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <span
+                      className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                        completedStageIds.includes('noi-tiet')
+                          ? 'bg-emerald-500 text-white'
+                          : unlockedStageIds.includes('noi-tiet')
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-surface-dim text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {completedStageIds.includes('noi-tiet')
+                          ? 'verified'
+                          : unlockedStageIds.includes('noi-tiet')
+                          ? 'lock_open'
+                          : 'lock'}
+                      </span>{' '}
+                      {completedStageIds.includes('noi-tiet')
+                        ? 'ĐÃ HOÀN THÀNH'
+                        : unlockedStageIds.includes('noi-tiet')
+                        ? 'MỚI MỞ KHÓA'
+                        : 'Cấp 22'}
+                    </span>
+                    <div
+                      className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                        unlockedStageIds.includes('noi-tiet')
+                          ? 'bg-gradient-to-tr from-emerald-600 via-teal-500 to-yellow-400 ring-4 ring-emerald-300/60 text-white'
+                          : 'bg-surface-container-highest text-outline'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-3xl">alt_route</span>
+                    </div>
+                    <div className="absolute -bottom-1 -right-2 bg-emerald-700 text-white px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm font-bold">
+                      Màn 7
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                      selectedStageId === 'noi-tiet' ? 'border-emerald-400' : 'border-transparent'
+                    }`}
+                  >
+                    <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
+                      Màn 7: Hệ Nội Tiết
+                    </p>
+                    <p className="font-label-sm text-label-sm text-emerald-300">
+                      Tuyến Yên &amp; Đảo Tụy
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            {/* Stage 8: Hệ Sinh Dục */}
+            {(activeRegion === 'all' || activeRegion === 'region2') &&
+              (!filterUnlockedOnly || unlockedStageIds.includes('sinh-duc')) && (
+                <div
+                  onClick={() => {
+                    setLockNotice(null);
+                    setSelectedStageId('sinh-duc');
+                  }}
+                  className={`absolute left-[82%] bottom-[25%] flex flex-col items-center group cursor-pointer transition-transform ${
+                    selectedStageId === 'sinh-duc' ? 'scale-105' : ''
+                  }`}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <span
+                      className={`absolute -top-10 px-3 py-1 rounded-full shadow-md font-label-sm text-label-sm font-bold flex items-center gap-1 whitespace-nowrap ${
+                        completedStageIds.includes('sinh-duc')
+                          ? 'bg-emerald-500 text-white'
+                          : unlockedStageIds.includes('sinh-duc')
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-surface-dim text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {completedStageIds.includes('sinh-duc')
+                          ? 'verified'
+                          : unlockedStageIds.includes('sinh-duc')
+                          ? 'lock_open'
+                          : 'lock'}
+                      </span>{' '}
+                      {completedStageIds.includes('sinh-duc')
+                        ? 'ĐÃ HOÀN THÀNH'
+                        : unlockedStageIds.includes('sinh-duc')
+                        ? 'MỚI MỞ KHÓA'
+                        : 'Cấp 25'}
+                    </span>
+                    <div
+                      className={`w-[76px] h-[76px] rounded-full flex items-center justify-center shadow-lg transition-all group-hover:scale-110 ${
+                        unlockedStageIds.includes('sinh-duc')
+                          ? 'bg-gradient-to-tr from-rose-500 via-pink-400 to-purple-400 ring-4 ring-rose-300/60 text-white'
+                          : 'bg-surface-container-highest text-outline'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-3xl">spa</span>
+                    </div>
+                    <div className="absolute -bottom-1 -right-2 bg-rose-700 text-white px-2 py-0.5 rounded-full font-label-sm text-label-sm shadow-sm font-bold">
+                      Màn 8
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-2 text-center bg-inverse-surface/85 backdrop-blur-sm px-3 py-1 rounded-xl border ${
+                      selectedStageId === 'sinh-duc' ? 'border-rose-400' : 'border-transparent'
+                    }`}
+                  >
+                    <p className="font-label-md text-label-md text-inverse-on-surface font-semibold">
+                      Màn 8: Hệ Sinh Dục
+                    </p>
+                    <p className="font-label-sm text-label-sm text-rose-300">
+                      Giao Tử &amp; Thụ Tinh
+                    </p>
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* Bottom-Left Potabi Tip Card */}
@@ -679,6 +1011,26 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
                   <span className="material-symbols-outlined text-xs">timer</span>
                   <span>{currentStage.duration}</span>
                 </div>
+              </div>
+
+              {/* Quick stage selector pill row for all 8 stages */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                {Object.keys(STAGES).map((stId, index) => (
+                  <button
+                    key={stId}
+                    onClick={() => {
+                      setLockNotice(null);
+                      setSelectedStageId(stId);
+                    }}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                      selectedStageId === stId
+                        ? 'bg-primary text-on-primary shadow-xs'
+                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    Màn {index + 1}
+                  </button>
+                ))}
               </div>
 
               <div>
@@ -960,8 +1312,9 @@ export const JourneyMapScreen: React.FC<JourneyMapScreenProps> = ({
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={() => {
+                  const targetStage = activeQuizStageId || selectedStageId;
                   setActiveQuizStageId(null);
-                  onPlayStage2D();
+                  onPlayStage2D(targetStage);
                 }}
                 className="px-space-md py-2 rounded-full bg-surface-container text-primary font-label-sm text-label-sm cursor-pointer"
               >

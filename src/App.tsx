@@ -27,6 +27,8 @@ import { HomeScreen } from './components/HomeScreen';
 import { JourneyMapScreen } from './components/JourneyMapScreen';
 import { StoryCutsceneScreen } from './components/StoryCutsceneScreen';
 import { StomachStageScreen } from './components/StomachStageScreen';
+import { Stage2DRunner } from './components/Stage2DRunner';
+import { WorldAssetShowcase } from './components/WorldAssetShowcase';
 import { WeeklyQuestsScreen } from './components/WeeklyQuestsScreen';
 import {
   LabToolModal,
@@ -42,10 +44,14 @@ export type ScreenMode =
   | 'trang-phuc'
   | 'ho-so'
   | 'cutscene'
-  | 'stomach-2d';
+  | 'stomach-2d'
+  | 'stage-2d'
+  | 'asset-showcase';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenMode>('trang-chu');
+  const [currentPlayingStageId, setCurrentPlayingStageId] = useState<string>('tuan-hoan');
+  const [pendingStageToPlay, setPendingStageToPlay] = useState<string>('tuan-hoan');
   const [gameState, setGameState] = useState<GameProgressState>(() => loadGameProgress());
   const [activeLabTool, setActiveLabTool] = useState<
     'microscope' | 'stain' | 'notebook' | null
@@ -213,14 +219,20 @@ export default function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, [currentUser]);
 
-  // Gate entry to the 2D Stomach Stage with AuthGateModal if not yet signed in
-  const requestEnterStomach2D = () => {
+  // Gate entry to any 2D Stage with AuthGateModal if not yet signed in
+  const handlePlayStage2D = (stageId: string = 'tuan-hoan') => {
+    setCurrentPlayingStageId(stageId);
     if (currentUser) {
-      setActiveScreen('stomach-2d');
+      setActiveScreen('stage-2d');
     } else {
+      setPendingStageToPlay(stageId);
       setPending2DNavigation(true);
       setIsAuthModalOpen(true);
     }
+  };
+
+  const requestEnterStomach2D = () => {
+    handlePlayStage2D('tieu-hoa');
   };
 
   const handleFinishIntroToGameplay = () => {
@@ -331,12 +343,20 @@ export default function App() {
       const unlockedStages = new Set(prev.unlockedStageIds);
       completedStages.add(stageId);
 
-      if (stageId === 'tuan-hoan') {
+      if (stageId === 'tieu-hoa') {
+        unlockedStages.add('tuan-hoan');
+      } else if (stageId === 'tuan-hoan') {
         unlockedStages.add('ho-hap');
       } else if (stageId === 'ho-hap') {
         unlockedStages.add('than-kinh');
       } else if (stageId === 'than-kinh') {
         unlockedStages.add('van-dong');
+      } else if (stageId === 'van-dong') {
+        unlockedStages.add('bai-tiet');
+      } else if (stageId === 'bai-tiet') {
+        unlockedStages.add('noi-tiet');
+      } else if (stageId === 'noi-tiet') {
+        unlockedStages.add('sinh-duc');
       }
 
       return {
@@ -483,7 +503,10 @@ export default function App() {
     }
   };
 
-  const isImmersiveGameScreen = activeScreen === 'cutscene' || activeScreen === 'stomach-2d';
+  const isImmersiveGameScreen =
+    activeScreen === 'cutscene' ||
+    activeScreen === 'stomach-2d' ||
+    activeScreen === 'stage-2d';
   const headerAvatarSrc = IMAGES.potabiBlueAvatar;
 
   return (
@@ -587,6 +610,20 @@ export default function App() {
                 }`}
               >
                 Hồ sơ
+              </button>
+              <button
+                onClick={() => setActiveScreen('asset-showcase')}
+                title="Khám phá thiết kế thị giác và kho asset SVG 3 thế giới mới"
+                className={`px-space-md py-1.5 rounded-full font-label-lg text-label-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  activeScreen === 'asset-showcase'
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white shadow-md'
+                    : 'text-purple-900 bg-purple-100/80 hover:bg-purple-200/90 font-bold'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base text-purple-600 group-hover:rotate-12 transition-transform">
+                  palette
+                </span>
+                <span>Asset 3 Màn Mới ✨</span>
               </button>
             </nav>
 
@@ -695,10 +732,11 @@ export default function App() {
             onNavigateQuests={() => setActiveScreen('nhiem-vu-tuan')}
             onOpenNotebook={() => handleOpenLabTool('notebook')}
             onPlayCutscene={() => setActiveScreen('cutscene')}
-            onPlayStage2D={requestEnterStomach2D}
+            onPlayStage2D={handlePlayStage2D}
             stageProgress={gameState.stageProgress}
             unlockedSpecimens={gameState.unlockedSpecimens}
             unlockedStageIds={gameState.unlockedStageIds}
+            onOpenAssetShowcase={() => setActiveScreen('asset-showcase')}
           />
         )}
 
@@ -770,6 +808,25 @@ export default function App() {
             onStationCompleted={handleStationCompleted}
             onUpdateStationProgressMap={handleUpdateStationProgressMap}
             stationProgressMap={gameState.stationProgressMap || {}}
+          />
+        )}
+
+        {activeScreen === 'stage-2d' && (
+          <Stage2DRunner
+            stageId={currentPlayingStageId}
+            equippedOutfitId={gameState.equippedOutfitId}
+            onExitToMap={() => setActiveScreen('hanh-trinh')}
+            onStageVictory={(stageId, expReward, diamondReward) => {
+              handleCompleteStageQuiz(stageId, expReward, diamondReward);
+            }}
+            onOpenNotebook={() => handleOpenLabTool('notebook')}
+          />
+        )}
+
+        {activeScreen === 'asset-showcase' && (
+          <WorldAssetShowcase
+            onPlayStage2D={(stageId) => handlePlayStage2D(stageId)}
+            onBackToMap={() => setActiveScreen('hanh-trinh')}
           />
         )}
       </main>
@@ -904,7 +961,8 @@ export default function App() {
           setIsAuthModalOpen(false);
           if (pending2DNavigation) {
             setPending2DNavigation(false);
-            setActiveScreen('stomach-2d');
+            setCurrentPlayingStageId(pendingStageToPlay);
+            setActiveScreen('stage-2d');
           }
         }}
         onClose={() => {
@@ -915,7 +973,8 @@ export default function App() {
           setIsAuthModalOpen(false);
           if (pending2DNavigation) {
             setPending2DNavigation(false);
-            setActiveScreen('stomach-2d');
+            setCurrentPlayingStageId(pendingStageToPlay);
+            setActiveScreen('stage-2d');
           }
         }}
       />

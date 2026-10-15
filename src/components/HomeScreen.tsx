@@ -604,10 +604,10 @@ export function HomeScreen({
                 <span className="material-symbols-outlined text-2xl">sports_esports</span>
               </div>
               <span className="font-label-md text-label-md font-bold text-on-surface line-clamp-1">
-                Màn 2D Dạ Dày
+                Màn 2D Parkour
               </span>
               <span className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">
-                Thử thách Thực địa
+                Phiêu Lưu Cơ Thể
               </span>
               <span className="mt-2 text-[10px] font-bold text-tertiary bg-tertiary-fixed/60 px-2 py-0.5 rounded-full">
                 Vào chơi 2D →

@@ -228,15 +228,36 @@
   animation: bio-sway-slow 6s ease-in-out infinite;
 }
 
-.animate-pulse-halo {
-  animation: bio-pulse-halo 2.4s ease-in-out infinite;
+@keyframes cardiac-cycle {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  12% {
+    transform: scale(1.016);
+    filter: brightness(1.05);
+  }
+  38% {
+    transform: scale(1.025);
+    filter: brightness(1.1);
+  }
+  60% {
+    transform: scale(1);
+    filter: brightness(0.98);
+  }
+}
+
+.animate-cardiac-pulse {
+  animation: cardiac-cycle 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-potabi-idle,
   .animate-shadow-pulse,
   .animate-sway-slow,
-  .animate-pulse-halo {
+  .animate-pulse-halo,
+  .animate-cardiac-pulse {
     animation: none !important;
   }
 }
+
